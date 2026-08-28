@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>A.4 통합 로그인</title>
+<style>
+:root{
+  --blue:#3899ca; --navy:#5b80bd; --sky:#60bddb; --green:#269e77;
+  --bg:#f4f6f6; --text:#26364f; --sub:#4a576c; --bd:#bdc1c9; --bd2:#e6e8eb; --red:#e50048;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Malgun Gothic','맑은 고딕',sans-serif;}
+body{background:#e9edf0;color:var(--text);font-size:11.5px;padding:14px;}
+.doc{width:297mm;margin:0 auto;position:relative;background:#fff;box-shadow:0 0 0 1px #d5d9dd;}
+
+.path-bar{display:flex;border:1px solid var(--bd);margin-bottom:8px;}
+.pb-label{background:var(--bg);padding:7px 15px;text-align:center;font-size:11.5px;border-right:1px solid var(--bd);flex-shrink:0;}
+.pb-value{padding:7px 14px;font-size:11.5px;display:flex;align-items:center;gap:8px;}
+.pb-value.grow{flex:1;} .pb-value .sep{color:#9aa3ae;font-size:11px;}
+.pb-right{display:flex;border-left:1px solid var(--bd);}
+.pb-right .pb-label{width:90px;} .pb-right .pb-value{width:120px;font-weight:bold;color:var(--navy);}
+
+.doc-body{display:flex;border:1px solid var(--bd);}
+.screen-area{flex:74;border-right:1px solid var(--bd);padding:9px 28px 6px 34px;position:relative;}
+.define-panel{flex:26;}
+.page-title-row{display:flex;align-items:center;gap:7px;padding:11px 2px 9px;}
+.page-title{font-size:16px;font-weight:bold;}
+
+.badge{position:absolute;left:-12px;width:21px;height:21px;border-radius:50%;background:var(--red);color:#fff;
+       font-size:11px;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:5;box-shadow:0 0 0 2px #fff;}
+.badge.right{left:auto;right:-8px;} .badge.nested{left:-26px;}
+
+.btn{border:none;border-radius:2px;font-size:11px;cursor:pointer;padding:5px 11px;color:#fff;display:inline-flex;align-items:center;gap:4px;justify-content:center;}
+.btn-navy{background:var(--navy);} .btn-green{background:var(--green);}
+.btn-grey{background:#fff;color:var(--sub);border:1px solid var(--bd);}
+.btn-mini{padding:3px 8px;font-size:10.5px;}
+
+input[type=text],input[type=password],input[type=email],select{
+    border:1px solid var(--bd);border-radius:3px;padding:4px 8px;font-size:11px;height:28px;
+    background:#fff;color:var(--text);width:100%;}
+
+/* 1. 상단 구분 탭 */
+.tab-row{display:flex;gap:6px;margin-bottom:8px;position:relative;}
+.tab-btn{flex:0 0 130px;text-align:center;padding:9px 0;border:1px solid var(--bd);border-radius:6px 6px 0 0;
+        font-size:12.5px;font-weight:bold;color:var(--sub);background:var(--bg);}
+.tab-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+/* 로그인 카드 공통 */
+.two-col{display:flex;gap:20px;align-items:flex-start;}
+.col-half{flex:1;position:relative;min-width:0;}
+.login-card{border:1px solid var(--bd2);border-radius:8px;padding:12px 18px;background:#fff;}
+.card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.card-h .t{font-size:13px;font-weight:bold;}
+.mode-toggle{font-size:10.5px;}
+.mode-toggle b{color:var(--navy);cursor:pointer;text-decoration:underline;}
+.f-row{margin-bottom:6px;}
+.f-row label{display:block;font-size:10px;color:var(--sub);font-weight:bold;margin-bottom:2px;}
+.login-actions .btn{width:100%;padding:7px;font-size:12px;margin-top:0;}
+.find-links{text-align:center;margin-top:7px;font-size:10.5px;color:var(--sub);}
+.find-links b{color:var(--navy);cursor:pointer;font-weight:bold;}
+.find-links .sep{margin:0 7px;color:var(--bd);}
+
+/* 2-3. 학생 최초 로그인 폼 */
+.first-login-box{margin-top:8px;padding:8px 10px;border:1px dashed var(--navy);border-radius:6px;background:#f8fbff;position:relative;}
+.fl-tt{font-size:10.5px;font-weight:bold;color:var(--navy);margin-bottom:6px;}
+.fl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px;}
+.fl-grid select{height:26px;font-size:10.5px;}
+.fl-row2{display:flex;gap:6px;margin-bottom:4px;}
+.fl-row2 input{height:26px;font-size:10.5px;}
+.fl-act{margin-top:4px;}
+.fl-act .btn{width:100%;padding:6px;font-size:11.5px;}
+.fl-note{font-size:9.5px;color:var(--red);margin-top:5px;line-height:1.4;}
+
+/* 5. 찾기 팝업 미리보기 */
+.popup-preview{margin-top:8px;padding:9px 14px;border:1px dashed var(--navy);border-radius:6px;background:#f8fbff;position:relative;}
+.pp-h{font-size:10.5px;font-weight:bold;color:var(--navy);margin-bottom:7px;}
+.pp-cols{display:flex;gap:22px;}
+.pp-col{flex:1;}
+.pp-col .pc-t{font-size:10.5px;font-weight:bold;margin-bottom:6px;}
+.pc-row{display:flex;gap:6px;margin-bottom:5px;}
+.pc-row input{height:25px;font-size:10.5px;}
+.pc-result{margin-top:6px;font-size:10px;background:#eef2fb;border-radius:4px;padding:6px 9px;color:var(--navy);}
+
+.dp-head{background:var(--bg);text-align:center;padding:8px;font-size:12.5px;font-weight:bold;border-bottom:1px solid var(--bd);}
+.dp-intro{padding:9px 11px;font-size:11px;line-height:1.5;border-bottom:1px solid var(--bd);}
+.dp-row{display:flex;border-bottom:1px solid var(--bd);}
+.dp-row:last-child{border-bottom:none;}
+.dp-num{width:38px;flex-shrink:0;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;border-right:1px solid var(--bd);}
+.dp-cont{flex:1;padding:8px 10px;}
+.dp-title{font-size:11.5px;font-weight:bold;margin-bottom:3px;}
+.dp-cont ul{list-style:none;}
+.dp-cont li{font-size:10.5px;line-height:1.42;padding-left:10px;position:relative;margin-bottom:1px;}
+.dp-cont li::before{content:'•';position:absolute;left:0;color:var(--sub);}
+.em{color:var(--red);}
+
+@page{ size:A4 landscape; margin:8mm; }
+@media print{ body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="path-bar">
+    <div class="pb-label">페이지 경로</div>
+    <div class="pb-value grow">회원관리 <span class="sep">›</span> 로그인 <span class="sep">›</span> 통합 로그인</div>
+    <div class="pb-right"><div class="pb-label">페이지</div><div class="pb-value">PAGE 1</div></div>
+  </div>
+
+  <div class="doc-body">
+    <div class="screen-area">
+      <div class="page-title-row"><span class="page-title">로그인</span></div>
+
+      <!-- 1. 상단 구분 탭 -->
+      <div class="tab-row">
+        <div class="badge" style="top:-8px;left:-30px;">1</div>
+        <div class="tab-btn active">학생</div>
+        <div class="tab-btn">관리자</div>
+      </div>
+
+      <div class="two-col">
+        <!-- 2~3. 학생 로그인 -->
+        <div class="col-half">
+          <div class="badge" style="top:-8px;left:-30px;">2</div>
+          <div class="login-card">
+            <div class="card-h">
+              <span class="t">학생 로그인</span>
+              <span class="mode-toggle">일반 로그인 / <b>최초 로그인이신가요?</b></span>
+            </div>
+            <div class="f-row"><label>아이디</label><input type="text" placeholder="아이디 (이메일)"></div>
+            <div class="f-row"><label>비밀번호</label><input type="password" placeholder="비밀번호"></div>
+            <div class="login-actions"><button class="btn btn-navy">로그인</button></div>
+            <div class="find-links"><b>아이디 찾기</b><span class="sep">|</span><b>비밀번호 찾기</b></div>
+
+            <!-- 3. 최초 로그인 폼 (토글 시 노출) -->
+            <div class="first-login-box">
+              <div class="badge" style="top:-8px;left:-24px;">3</div>
+              <div class="fl-tt">🔑 최초 로그인 — 학년/반/학교/이름/이메일로 본인확인 후 로그인</div>
+              <div class="fl-grid">
+                <select><option>학교 선택</option></select>
+                <select><option>학년 선택</option></select>
+                <select><option>반 선택</option></select>
+              </div>
+              <div class="fl-row2">
+                <input type="text" placeholder="학생 이름">
+                <input type="email" placeholder="이메일">
+              </div>
+              <div class="fl-act"><button class="btn btn-green">본인확인 후 로그인</button></div>
+              <div class="fl-note">※ 최초 로그인 성공 시 마이페이지로 이동하며, <b>비밀번호를 설정하기 전까지는 시스템의 다른 기능을 이용할 수 없습니다.</b></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. 관리자 로그인 -->
+        <div class="col-half">
+          <div class="badge" style="top:-8px;left:-10px;">4</div>
+          <div class="login-card">
+            <div class="card-h"><span class="t">관리자 로그인</span></div>
+            <div class="f-row"><label>아이디</label><input type="text" placeholder="관리자 아이디"></div>
+            <div class="f-row"><label>비밀번호</label><input type="password" placeholder="비밀번호"></div>
+            <div class="login-actions"><button class="btn btn-navy">로그인</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 아이디/비밀번호 찾기 팝업 미리보기 -->
+      <div class="popup-preview">
+        <div class="badge" style="top:-8px;left:-24px;">5</div>
+        <div class="pp-h">🔍 [팝업 미리보기] 아이디 찾기 / 비밀번호 찾기 — 학생 로그인 화면에서 클릭 시 노출</div>
+        <div class="pp-cols">
+          <div class="pp-col">
+            <div class="pc-t">아이디 찾기</div>
+            <div class="pc-row"><input type="text" placeholder="이름"><input type="text" placeholder="학교"></div>
+            <div class="pc-row"><input type="email" placeholder="가입 시 등록한 이메일"></div>
+            <button class="btn btn-navy btn-mini" style="width:100%;">인증 후 아이디 확인</button>
+            <div class="pc-result">확인된 아이디 : ha***05@sch.ac.kr</div>
+          </div>
+          <div class="pp-col">
+            <div class="pc-t">비밀번호 찾기</div>
+            <div class="pc-row"><input type="text" placeholder="아이디"></div>
+            <div class="pc-row"><input type="email" placeholder="가입 시 등록한 이메일"></div>
+            <button class="btn btn-navy btn-mini" style="width:100%;">인증 후 임시비밀번호 발송</button>
+            <div class="pc-result">등록 이메일로 임시 비밀번호를 발송했습니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 우 : 화면 정의 -->
+    <div class="define-panel">
+      <div class="dp-head">화면 정의</div>
+      <div class="dp-intro">
+        학생·관리자 통합 로그인 화면. <b>구분 탭</b>으로 로그인 유형을 전환하며, 학생은 일반 로그인 외에 <b>최초 로그인</b> 방식을 별도 제공한다.
+      </div>
+
+      <div class="dp-row"><div class="dp-num">1</div><div class="dp-cont"><div class="dp-title">구분 탭</div>
+        <ul><li>학생 / 관리자 2종만 제공</li></ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">2</div><div class="dp-cont"><div class="dp-title">학생 로그인 (일반)</div>
+        <ul>
+          <li>아이디(이메일 형식) · 비밀번호 입력 후 로그인</li>
+          <li>하단 <b>아이디 찾기 / 비밀번호 찾기</b> 링크 제공 (5번 참조)</li>
+          <li>상단 "최초 로그인이신가요?" 클릭 시 3번 폼으로 전환</li>
+        </ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">3</div><div class="dp-cont"><div class="dp-title">학생 최초 로그인</div>
+        <ul>
+          <li>학교 · 학년 · 반 선택 + 학생이름 · 이메일 입력으로 본인확인</li>
+          <li class="em">로그인 성공 시 마이페이지로 이동, <b>비밀번호 설정 전까지 시스템 이용 제한</b></li>
+          <li>비밀번호 설정 완료 후 이후부터는 일반 로그인 사용</li>
+        </ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">4</div><div class="dp-cont"><div class="dp-title">관리자 로그인</div>
+        <ul><li>아이디 · 비밀번호 입력 후 로그인만 제공 (찾기 기능 없음)</li></ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">5</div><div class="dp-cont"><div class="dp-title">아이디 · 비밀번호 찾기</div>
+        <ul>
+          <li>아이디 찾기 : 이름 · 학교 · 이메일 인증 → 마스킹된 아이디 표시</li>
+          <li>비밀번호 찾기 : 아이디 · 이메일 인증 → 임시 비밀번호 발송</li>
+          <li>관리자 로그인에는 미제공</li>
+        </ul></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    function mmToPx(mm){var p=document.createElement('div');p.style.cssText='position:absolute;visibility:hidden;height:'+mm+'mm;width:0;';document.body.appendChild(p);var px=p.getBoundingClientRect().height;document.body.removeChild(p);return px;}
+    var pageH=mmToPx(PAGE_H_MM-PRINT_MARGIN_MM);
+    document.querySelectorAll('.doc').forEach(function(doc){
+        var total=doc.scrollHeight;
+        var n=Math.max(1,Math.ceil(total/pageH));if(n<2)return;
+        var layer=document.createElement('div');layer.className='page-break-guide';layer.style.height=total+'px';
+        for(var i=1;i<n;i++){var l=document.createElement('div');l.className='pbg-line';l.style.top=(pageH*i)+'px';layer.appendChild(l);}
+        doc.appendChild(layer);
+    });
+})();
+</script>
+</body>
+</html>

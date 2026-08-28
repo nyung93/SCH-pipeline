@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>비교과 프로그램 등록</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+/* A4 가로(297mm) 인쇄 전용 고정폭 */
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+/* 페이지 헤더 : 회색 캡 */
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-num.on{ background:#1a73e8; color:#fff; }
+.page-num.page-right{ margin-left:auto; flex-shrink:0; align-self:center; }
+.crumb-sep{ color:#bbb; font-size:12px; font-weight:700; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+/* 2단 레이아웃 */
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+/* 캡 그룹 */
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-cap .new{ background:#e8f0fe; color:#1a73e8; font-size:10px; padding:1px 8px; border-radius:8px; font-weight:700; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+/* 그룹 내 하위 구분 */
+.sub{ margin-bottom:11px; }
+.sub:last-child{ margin-bottom:0; }
+.sub-cap{ display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; color:#666; margin-bottom:6px; }
+.sub-cap .mark{ background:#eee; color:#888; font-size:10.5px; font-weight:700;
+  padding:2px 8px; border-radius:4px; white-space:nowrap; }
+.sub-cap .mark.spec{ background:#e8f0fe; color:#1a73e8; }
+.sub-cap .icon{ width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.sub-cap .tail{ margin-left:auto; font-size:10.5px; font-weight:500; color:#aaa; }
+
+/* 우측 정의 프레임 */
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+/* 요구사항 블록 */
+.rq{ margin-bottom:11px; }
+.rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px;
+  display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq p{ font-size:11px; line-height:1.5; color:#333; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; }
+.rq li.em::before{ color:#c62828; }
+
+/* 요구사항 표 */
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; }
+.rqt .c{ text-align:center; }
+.rqt .yes{ color:#c62828; font-weight:700; text-align:center; }
+.rqt .no{ color:#ccc; text-align:center; }
+.rqt.spec th:first-child{ width:66px; }
+
+/* 버튼 */
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; }
+.btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-success{ background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.btn-danger { background:#fce4ec; color:#c62828; border:1px solid #ef9a9a; }
+.btn-lg{ height:30px; padding:5px 18px; font-size:12px; }
+.btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+.btn[disabled]{ background:#f0f0f0; color:#bbb; border:1px solid #e0e0e0; cursor:not-allowed; }
+
+/* 폼 요소 */
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+textarea.mf-input{ height:auto; min-height:58px; width:100%; resize:vertical; line-height:1.6; }
+.charcnt{ text-align:right; font-size:10.5px; color:#aaa; margin-top:3px; }
+.upload{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:#aaa; }
+.help-txt{ font-size:10.5px; color:#888; line-height:1.4; }
+.req{ color:#c62828; margin-left:2px; }
+.w-full{ width:100%; }
+
+/* 세그먼트 / 스위치 / 체크 */
+.seg{ display:inline-flex; border:1px solid #ddd; border-radius:4px; overflow:hidden; }
+.seg span{ padding:4px 14px; font-size:11px; color:#666; background:#fff; border-left:1px solid #eee; }
+.seg span:first-child{ border-left:none; }
+.seg span.on{ background:#1a73e8; color:#fff; font-weight:600; }
+.sw{ display:inline-flex; border:1px solid #ddd; border-radius:13px; overflow:hidden; font-size:11px; }
+.sw span{ padding:3px 13px; }
+.sw .on{ background:#e8f0fe; color:#1a73e8; font-weight:600; }
+.sw .off{ background:#fff; color:#bbb; }
+.check-group{ display:flex; gap:14px; flex-wrap:wrap; }
+.check-item{ display:inline-flex; align-items:center; gap:5px; font-size:11px; line-height:1.4; }
+.check-box{ width:14px; height:14px; border:1px solid #ccc; border-radius:3px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:9px; flex-shrink:0; color:#1a73e8; background:#fff; }
+.check-box.on{ background:#e8f0fe; border-color:#90caf9; }
+
+/* 라벨-값 그리드 : 기본 3쌍/행(검색) · .form 은 2열(입력폼) */
+.cg{ display:grid; grid-template-columns:78px 1fr 78px 1fr 78px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg.form{ grid-template-columns:124px 1fr; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .vl.col{ display:block; }
+.cg:not(.form) .lb:nth-last-child(-n+6), .cg:not(.form) .vl:nth-last-child(-n+6){ border-bottom:none; }
+.cg.form .lb:nth-last-child(2), .cg.form .vl:last-child{ border-bottom:none; }
+.cg.form .lb{ white-space:normal; }
+.cg.common .vl{ background:#fafafa; }
+
+/* 검색 액션 */
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+
+/* 차수 미니 테이블 */
+.cha{ width:100%; border-collapse:collapse; font-size:10.5px; margin-top:8px; }
+.cha th{ background:#f8f8f8; padding:5px 6px; border:1px solid #eee; color:#555; font-weight:600; }
+.cha td{ padding:5px 6px; border:1px solid #eee; text-align:center; }
+
+/* 차수 반복 입력 블록 (2026-08-27 추가 — [+ 차수 추가] 클릭 시 아래로 바로 추가되는 방식) */
+.cha-block{ border:1px solid #ddd; border-radius:8px; overflow:hidden; margin-bottom:10px; background:#fff; }
+.cha-block:last-of-type{ margin-bottom:0; }
+.cha-block-head{ background:#f8f8f8; padding:7px 9px; font-size:11px; font-weight:700; color:#333; border-bottom:1px solid #e0e0e0; }
+.cha-del{ font-size:10.5px; color:#c62828; text-decoration:none; font-weight:600; }
+.cha-del:hover{ text-decoration:underline; }
+
+/* 규칙 박스 */
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec;
+  border-radius:5px; margin-top:5px; line-height:1.5; }
+.exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe;
+  border-radius:5px; margin-top:5px; line-height:1.5; }
+.std-box:first-child{ margin-top:0; }
+
+/* 특화 기능 요약 */
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px;
+  border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; }
+.ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; }
+.ph-4{ background:#e8f5e9; color:#2e7d32; }
+.ph-5{ background:#fce4ec; color:#c2185b; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; }
+.stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb">
+      <span class="page-num strong">화면 3.1</span>
+    </div>
+    <div>
+      <div class="page-title">비교과 프로그램 등록</div>
+      <div class="page-desc">체험 프로그램을 신규 등록·수정하는 관리자 화면. 회의록(2026-07-30) 반영 — 운영기간(일자)·차수별 등록·중복신청 제한·전체 학년 값 추가. 이번 개정(2026-08-27) — 임시저장 불러오기 신설, 최상단 고정 권한 총괄관리자로 제한, 재원 항목 신규 추가, 운영부서·재원 마스터 관리 팝업 신설, 차수 입력 방식을 반복 블록형으로 변경(교육시간 항목 추가), 총 교육시간 자동합산으로 전환.</div>
+    </div>
+    <span class="page-num page-right">PAGE 1</span>
+  </div>
+
+  <div class="layout">
+
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 기본정보 <span class="tail">필수 항목</span></div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">우선순위</div>
+            <div class="vl"><span class="check-item"><span class="check-box"></span> 최상단 고정</span> <span class="help-txt">* 총괄관리자만 설정 가능(부서운영자 로그인 시 체크박스 비활성화) · 학생·교사 프로그램 목록(A.3·E.1)에서만 최상단 노출 — B.2 관리자 목록 정렬에는 영향 없음 · 여러 건 동시 고정 시 최근 고정한 프로그램이 우선 · 운영완료·취소 상태가 되면 자동으로 일반 정렬로 복귀</span></div>
+
+            <div class="lb">년도 / 학기<span class="req">*</span></div>
+            <div class="vl"><select class="filter-select"><option>2026</option></select><select class="filter-select"><option>1학기</option><option>2학기</option></select></div>
+
+            <div class="lb">프로그램명<span class="req">*</span></div>
+            <div class="vl"><input class="mf-input" style="width:70%;"></div>
+
+            <div class="lb">교내 / 외<span class="req">*</span></div>
+            <div class="vl"><div class="seg"><span class="on">교내</span><span>교외</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 서비스 및 노출 설정</div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">노출여부</div>
+            <div class="vl"><div class="seg"><span class="on">보임</span><span>숨김</span></div></div>
+
+            <div class="lb">대표이미지</div>
+            <div class="vl"><div class="upload"><button class="btn btn-outline">선택</button><span>선택된 파일 없음</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 신청대상 설정 <span class="new">전체 학년 전 학교급 확대</span></div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">학교 선택</div>
+            <div class="vl">
+              <div class="check-group">
+                <span class="check-item"><span class="check-box"></span> 전체</span>
+                <span class="check-item"><span class="check-box"></span> 초등학교</span>
+                <span class="check-item"><span class="check-box"></span> 중학교</span>
+                <span class="check-item"><span class="check-box"></span> 고등학교</span>
+              </div>
+            </div>
+
+            <div class="lb">학년</div>
+            <div class="vl col">
+              <div class="sub">
+                <div class="sub-cap"><span class="icon" style="background:#1a73e8;"></span> 초 <span class="tail">1~6학년</span></div>
+                <div class="check-group">
+                  <span class="check-item"><span class="check-box"></span> 1</span><span class="check-item"><span class="check-box"></span> 2</span>
+                  <span class="check-item"><span class="check-box"></span> 3</span><span class="check-item"><span class="check-box"></span> 4</span>
+                  <span class="check-item"><span class="check-box"></span> 5</span><span class="check-item"><span class="check-box"></span> 6</span>
+                  <span class="check-item"><span class="check-box"></span> 전체 학년</span>
+                </div>
+              </div>
+              <div class="sub">
+                <div class="sub-cap"><span class="icon" style="background:#e65100;"></span> 중 <span class="tail">1~3학년</span></div>
+                <div class="check-group">
+                  <span class="check-item"><span class="check-box"></span> 1</span><span class="check-item"><span class="check-box"></span> 2</span>
+                  <span class="check-item"><span class="check-box"></span> 3</span>
+                  <span class="check-item"><span class="check-box"></span> 전체 학년</span>
+                </div>
+              </div>
+              <div class="sub">
+                <div class="sub-cap"><span class="icon" style="background:#6a1b9a;"></span> 고 <span class="tail">1~3학년</span></div>
+                <div class="check-group">
+                  <span class="check-item"><span class="check-box"></span> 1</span><span class="check-item"><span class="check-box"></span> 2</span>
+                  <span class="check-item"><span class="check-box"></span> 3</span>
+                  <span class="check-item"><span class="check-box on">✓</span> 전체 학년</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">4</span> 운영정보 <span class="new">운영기간·차수 항목 확장</span></div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">운영부서<span class="req">*</span></div>
+            <div class="vl"><select class="filter-select" style="width:180px;"><option>선택</option></select> <button class="btn btn-outline btn-mini" title="운영부서 관리">⚙ 관리</button></div>
+
+            <div class="lb">재원<span class="req">*</span></div>
+            <div class="vl"><select class="filter-select" style="width:180px;"><option>선택</option><option>글로컬대학사업</option><option>앵커사업</option><option>AI중심대학사업</option><option>교비</option></select> <button class="btn btn-outline btn-mini" title="재원 관리">⚙ 관리</button></div>
+
+            <div class="lb">담당자<span class="req">*</span></div>
+            <div class="vl"><input class="mf-input" placeholder="이름" style="width:120px;"><input class="mf-input" placeholder="연락처" style="width:150px;"></div>
+
+            <div class="lb">운영기간<span class="req">*</span></div>
+            <div class="vl"><input class="mf-input" type="date"> <span>~</span> <input class="mf-input" type="date"> <span class="help-txt">* 신규 : 운영일자 항목</span></div>
+
+            <div class="lb">교육정보(차수)</div>
+            <div class="vl col">
+              <div class="cha-block">
+                <div class="cha-block-head">1차 (기본)</div>
+                <div class="cg form" style="border:none;border-radius:0;">
+                  <div class="lb">교육기간<span class="req">*</span></div><div class="vl"><input class="mf-input" type="date" style="width:128px;" value="2026-09-04"><select class="filter-select" style="width:52px;"><option>00</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option></select>시 <select class="filter-select" style="width:52px;"><option>00</option><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select>분 <span>~</span> <input class="mf-input" type="date" style="width:128px;" value="2026-09-04"><select class="filter-select" style="width:52px;"><option>00</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option></select>시 <select class="filter-select" style="width:52px;"><option>00</option><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select>분</div>
+                  <div class="lb">신청기간<span class="req">*</span></div><div class="vl"><input class="mf-input" type="date" style="width:128px;" value="2026-08-27"><select class="filter-select" style="width:52px;"><option>00</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option></select>시 <select class="filter-select" style="width:52px;"><option>00</option><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select>분 <span>~</span> <input class="mf-input" type="date" style="width:128px;" value="2026-09-03"><select class="filter-select" style="width:52px;"><option>00</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option></select>시 <select class="filter-select" style="width:52px;"><option>00</option><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select>분</div>
+                  <div class="lb">교육시간<span class="req">*</span></div>
+                  <div class="vl"><select class="filter-select" style="width:90px;"><option>선택</option><option>1시간</option><option>2시간</option><option>3시간</option><option>4시간</option><option>5시간</option><option>6시간</option><option>7시간</option><option>8시간</option><option>9시간</option><option>10시간</option><option>11시간</option><option>12시간</option><option>13시간</option><option>14시간</option><option>15시간</option><option>16시간</option><option>17시간</option><option>18시간</option><option>19시간</option><option>20시간</option><option>21시간</option><option>22시간</option><option>23시간</option><option>24시간</option><option>25시간</option><option>26시간</option><option>27시간</option><option>28시간</option><option>29시간</option><option>30시간</option></select> <span class="help-txt">* 1~30시간, 1시간 단위 · 총 교육시간에 자동 합산</span></div>
+                  <div class="lb">모집인원<span class="req">*</span></div>
+                  <div class="vl">최대 [ <input class="mf-input" type="number" style="width:56px;" value="20"> ]명 대기 [ <input class="mf-input" type="number" style="width:56px;" value="5"> ]명
+                    <span class="help-txt">* 최대인원 0 입력 시 무제한 · 대기인원 초과 시 대기인원 수만큼 신청가능</span></div>
+                  <div class="lb">교/강사</div>
+                  <div class="vl"><input class="mf-input w-full" value="홍길동 교수"></div>
+                  <div class="lb">교육장소</div>
+                  <div class="vl"><input class="mf-input w-full" value="미래융합센터 401호"></div>
+                </div>
+                
+              </div>
+              <div class="cha-block">
+                <div class="cha-block-head"><input class="mf-input" placeholder="차수/분반명 입력" style="width:220px;"></div>
+                <div class="cg form" style="border:none;border-radius:0;">
+                  <div class="lb">교육기간<span class="req">*</span></div><div class="vl"><input class="mf-input" type="date" style="width:128px;" value=""><select class="filter-select" style="width:52px;"><option>00</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option></select>시 <select class="filter-select" style="width:52px;"><option>00</option><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select>분 <span>~</span> <input class="mf-input" type="date" style="width:128px;" value=""><select class="filter-select" style="width:52px;"><option>00</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option></select>시 <select class="filter-select" style="width:52px;"><option>00</option><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select>분</div>
+                  <div class="lb">신청기간<span class="req">*</span></div><div class="vl"><input class="mf-input" type="date" style="width:128px;" value=""><select class="filter-select" style="width:52px;"><option>00</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option></select>시 <select class="filter-select" style="width:52px;"><option>00</option><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select>분 <span>~</span> <input class="mf-input" type="date" style="width:128px;" value=""><select class="filter-select" style="width:52px;"><option>00</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option></select>시 <select class="filter-select" style="width:52px;"><option>00</option><option>10</option><option>20</option><option>30</option><option>40</option><option>50</option></select>분</div>
+                  <div class="lb">교육시간<span class="req">*</span></div>
+                  <div class="vl"><select class="filter-select" style="width:90px;"><option>선택</option><option>1시간</option><option>2시간</option><option>3시간</option><option>4시간</option><option>5시간</option><option>6시간</option><option>7시간</option><option>8시간</option><option>9시간</option><option>10시간</option><option>11시간</option><option>12시간</option><option>13시간</option><option>14시간</option><option>15시간</option><option>16시간</option><option>17시간</option><option>18시간</option><option>19시간</option><option>20시간</option><option>21시간</option><option>22시간</option><option>23시간</option><option>24시간</option><option>25시간</option><option>26시간</option><option>27시간</option><option>28시간</option><option>29시간</option><option>30시간</option></select> <span class="help-txt">* 1~30시간, 1시간 단위 · 총 교육시간에 자동 합산</span></div>
+                  <div class="lb">모집인원<span class="req">*</span></div>
+                  <div class="vl">최대 [ <input class="mf-input" type="number" style="width:56px;" value=""> ]명 대기 [ <input class="mf-input" type="number" style="width:56px;" value=""> ]명
+                    <span class="help-txt">* 최대인원 0 입력 시 무제한 · 대기인원 초과 시 대기인원 수만큼 신청가능</span></div>
+                  <div class="lb">교/강사</div>
+                  <div class="vl"><input class="mf-input w-full" value=""></div>
+                  <div class="lb">교육장소</div>
+                  <div class="vl"><input class="mf-input w-full" value=""></div>
+                </div>
+                <div style="text-align:right;margin-top:6px;"><a href="#" class="cha-del">⊗ 삭제</a></div>
+              </div>
+              <button class="btn btn-success" style="align-self:flex-start;">＋ 차수 추가</button>
+              <span class="help-txt">* [+ 차수 추가] 클릭 시 위와 동일한 입력 블록이 바로 아래 행에 추가됨(기존 'N건 입력 후 생성' 방식 폐기) · 최초 1개 블록은 삭제 불가</span>
+            </div>
+
+            <div class="lb">중복신청여부</div>
+            <div class="vl"><div class="sw"><span class="off">사용</span><span class="on">미사용</span></div> <span class="help-txt">* 차수별 중복 신청 가능 여부 설정</span></div>
+          </div>
+
+          <div style="margin-top:10px;padding:10px 12px;border:1px dashed #90caf9;border-radius:8px;background:#f8fbff;">
+            <div style="font-size:11px;font-weight:700;color:#1a73e8;margin-bottom:6px;">🔍 [팝업 미리보기] 운영부서 옆 [⚙ 관리] 클릭 시 표시되는 마스터 관리 팝업 — 총괄관리자 전용, B.2·B.3 공용 컴포넌트</div>
+            <table class="cha">
+              <thead><tr><th style="width:55%;">운영부서명</th><th>등록 프로그램 수</th><th style="width:80px;">관리</th></tr></thead>
+              <tbody>
+                <tr><td style="text-align:left;">글로벌</td><td>9</td><td><button class="btn btn-danger btn-mini">삭제</button></td></tr>
+                <tr><td style="text-align:left;">취업지원팀</td><td>6</td><td><button class="btn btn-danger btn-mini">삭제</button></td></tr>
+                <tr><td style="text-align:left;">학술지원팀</td><td>3</td><td><button class="btn btn-danger btn-mini">삭제</button></td></tr>
+                <tr><td style="text-align:left;">산학협력팀</td><td>0</td><td><button class="btn btn-danger btn-mini">삭제</button></td></tr>
+                <tr><td style="text-align:left;">학생지원팀</td><td>1</td><td><button class="btn btn-danger btn-mini">삭제</button></td></tr>
+              </tbody>
+            </table>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <input class="mf-input w-full" placeholder="새 운영부서명 입력">
+              <button class="btn btn-success" style="flex-shrink:0;">＋ 추가</button>
+            </div>
+            <div class="exc-box" style="margin-top:7px;">⚠ 이미 해당 값으로 등록된 프로그램이 1건 이상 있으면 [삭제] 클릭 시 "등록된 프로그램이 있어 삭제할 수 없습니다" 얼럿을 표시하고 삭제를 처리하지 않는다 — 재원 관리 팝업과 동일 UI·동일 규칙(등록 프로그램 수만 운영부서 기준으로 집계).</div>
+          </div>
+
+          <div style="margin-top:10px;padding:10px 12px;border:1px dashed #90caf9;border-radius:8px;background:#f8fbff;">
+            <div style="font-size:11px;font-weight:700;color:#1a73e8;margin-bottom:6px;">🔍 [팝업 미리보기] 재원 옆 [⚙ 관리] 클릭 시 표시되는 마스터 관리 팝업 — 총괄관리자 전용, B.2·B.3 공용 컴포넌트</div>
+            <table class="cha">
+              <thead><tr><th style="width:55%;">재원명</th><th>등록 프로그램 수</th><th style="width:80px;">관리</th></tr></thead>
+              <tbody>
+                <tr><td style="text-align:left;">글로컬대학사업</td><td>12</td><td><button class="btn btn-danger btn-mini">삭제</button></td></tr>
+                <tr><td style="text-align:left;">앵커사업</td><td>4</td><td><button class="btn btn-danger btn-mini">삭제</button></td></tr>
+                <tr><td style="text-align:left;">AI중심대학사업</td><td>0</td><td><button class="btn btn-danger btn-mini">삭제</button></td></tr>
+                <tr><td style="text-align:left;">교비</td><td>8</td><td><button class="btn btn-danger btn-mini">삭제</button></td></tr>
+              </tbody>
+            </table>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <input class="mf-input w-full" placeholder="새 재원명 입력">
+              <button class="btn btn-success" style="flex-shrink:0;">＋ 추가</button>
+            </div>
+            <div class="exc-box" style="margin-top:7px;">⚠ 이미 해당 값으로 등록된 프로그램이 1건 이상 있으면 [삭제] 클릭 시 "등록된 프로그램이 있어 삭제할 수 없습니다" 얼럿을 표시하고 삭제를 처리하지 않는다 — 운영부서 관리 팝업과 동일 UI·동일 규칙.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">5</span> 역량점수 <span class="new">신규</span></div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">운영 형태<span class="req">*</span></div>
+            <div class="vl"><div class="seg"><span class="on">일반참여형</span><span>심화 실습형</span></div> <span class="help-txt">* 일반참여형 : 특강/견학/전공체험 등 · 심화 실습형 : 실험·실습/프로젝트·과제형</span></div>
+
+            <div class="lb">다면적역량<span class="req">*</span></div>
+            <div class="vl"><div class="seg"><span class="on">창의</span><span>공감</span><span>글로벌</span></div> <span class="help-txt">* 3개 영역 중 1개만 선택 · 디지털 배지 영역과 연동</span></div>
+
+            <div class="lb">총 교육시간</div>
+            <div class="vl"><input class="mf-input" type="number" style="width:80px;background:#f0f0f0;" value="0" disabled> 시간 <span class="help-txt">* 자동계산(읽기전용) — 교육정보(차수)의 각 차수별 교육시간 합산, 차수 추가/삭제·교육시간 변경 시 실시간 재계산</span></div>
+
+            <div class="lb">역량점수<span class="req">*</span></div>
+            <div class="vl">
+              <input class="mf-input" type="number" style="width:80px;" value="4">
+              <span class="help-txt">* 운영 형태·총 교육시간 기준 자동 산정, 필요 시 수정 가능</span>
+              <button class="btn btn-outline">📋 부여 기준 보기</button>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;padding:10px 12px;border:1px dashed #90caf9;border-radius:8px;background:#f8fbff;">
+            <div style="font-size:11px;font-weight:700;color:#1a73e8;margin-bottom:6px;">🔍 [팝업 미리보기] '부여 기준 보기' 클릭 시 표시되는 역량점수 부여 기준표</div>
+            <table class="cha">
+              <thead><tr><th>운영 형태</th><th>1시간 이상~3시간 미만</th><th>3시간 이상~6시간 미만</th><th>6시간 이상 · 1일 과정</th><th>2일 이상(다일/숙박)</th><th>1주 이상</th></tr></thead>
+              <tbody>
+                <tr><td style="text-align:left;">일반참여형<br><span class="help-txt">특강·견학·전공체험 등</span></td><td>4점</td><td>5점</td><td>7점</td><td>10점</td><td>13점</td></tr>
+                <tr><td style="text-align:left;">심화 실습형<br><span class="help-txt">실험·실습/프로젝트·과제형</span></td><td>5점</td><td>6점</td><td>8점</td><td>12점</td><td>15점</td></tr>
+              </tbody>
+            </table>
+            <div class="exc-box" style="margin-top:7px;">원문 요청의 '87점'은 오탈자로 추정되어 <b>8점</b>으로 반영했습니다 — 확인 부탁드립니다.</div>
+            <div class="help-txt" style="margin-top:6px;">* 상기 기준을 원칙으로 하되 역량점수는 일부 가감 가능 (자동 입력 후 사용자 수정 허용)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">6</span> 접수 및 만족도</div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">온라인접수<span class="req">*</span></div>
+            <div class="vl"><div class="sw"><span class="on">사용</span><span class="off">미사용</span></div></div>
+
+            <div class="lb">만족도 문항<span class="req">*</span></div>
+            <div class="vl"><span style="font-size:11px;">공통 :</span> <select class="filter-select" style="width:200px;"><option>선택</option></select></div>
+
+            <div class="lb">만족도조사 기간<span class="req">*</span></div>
+            <div class="vl"><input class="mf-input" type="date"> <select class="filter-select"><option>정시</option></select> <span>~</span> <input class="mf-input" type="date"> <select class="filter-select"><option>정시</option></select></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">7</span> 인쇄양식</div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">인쇄양식사용</div>
+            <div class="vl">
+              <div class="check-group">
+                <span class="check-item"><span class="check-box"></span> 전체</span>
+                <span class="check-item"><span class="check-box on">✓</span> 신청서</span>
+                <span class="check-item"><span class="check-box on">✓</span> 참여확인서</span>
+                <span class="check-item"><span class="check-box on">✓</span> 수료증</span>
+                <span class="check-item"><span class="check-box"></span> 사용안함</span>
+              </div>
+            </div>
+
+            <div class="lb">발급기관장</div>
+            <div class="vl"><input class="mf-input" value="○○교육지원청 교육장" style="width:60%;"><button class="btn btn-outline">파일 선택</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">8</span> 내용 <span class="new">에디터 분리</span></div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">내용<span class="req">*</span></div>
+            <div class="vl col">
+              <div style="border:1px solid #ddd;border-radius:6px;overflow:hidden;">
+                <div style="display:flex;gap:4px;padding:6px 8px;background:#f8f8f8;border-bottom:1px solid #e0e0e0;flex-wrap:wrap;">
+                  <button class="btn btn-outline btn-mini">B</button>
+                  <button class="btn btn-outline btn-mini">I</button>
+                  <button class="btn btn-outline btn-mini">U</button>
+                  <button class="btn btn-outline btn-mini">≡</button>
+                  <button class="btn btn-outline btn-mini">🔗</button>
+                  <button class="btn btn-outline btn-mini">🖼</button>
+                  <button class="btn btn-outline btn-mini">표</button>
+                </div>
+                <div style="min-height:120px;padding:12px;font-size:11px;color:#aaa;background:#fff;">
+                  (에디터 입력 영역 — 별도 리치텍스트 에디터 컴포넌트로 구현)
+                </div>
+              </div>
+              <span class="help-txt">* 리치텍스트 에디터(별도 컴포넌트)로 구현 · 서식·이미지·표 삽입 지원</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions" style="justify-content:center;margin-top:6px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-lg">📂 임시저장 불러오기</button>
+          <button class="btn btn-outline btn-lg">임시저장</button>
+          <button class="btn btn-primary btn-lg">저장</button>
+        </div>
+        <span class="help-txt">마지막 임시저장 : 2026-08-27 14:32 · [임시저장 불러오기]는 가장 최근에 저장된 임시 데이터 1건만 불러온다(과거 이력 목록 없음)</span>
+      </div>
+    </div>
+
+    <div class="col-req">
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 기본정보</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>타입</th></tr>
+              <tr><td>년도/학기</td><td>select</td></tr>
+              <tr><td>프로그램명</td><td>text</td></tr>
+              <tr><td>교내/외</td><td>toggle</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li class="em">프로그램구분 항목 삭제</li>
+              <li>최상단 고정 체크박스는 <b>총괄관리자만 활성화</b> — 부서운영자 로그인 시 비활성화(회색 처리), 화면 입력이 아닌 로그인 계정의 등급권한 기준 서버단 강제(B.8 사용자 관리 연계)</li>
+              <li class="em">최상단 고정은 <b>학생·교사 프로그램 목록(A.3·E.1)</b>에만 적용 — B.2 관리자 목록의 정렬에는 영향 없음</li>
+              <li>여러 프로그램을 동시에 고정한 경우 <b>최근 고정한 순</b>으로 우선 노출</li>
+              <li>고정된 프로그램이 <b>운영완료·취소</b> 상태로 전환되면 자동으로 일반 정렬로 복귀(고정 해제)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 서비스·노출</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>노출여부 = 숨김이면 목록 미노출</li><li>대표이미지 업로드</li><li class="em">프로그램유형 항목 삭제</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 신청대상</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>학교급별 학년 다중 선택</li>
+              <li class="em">초·중·고 각 학교급에 '전체 학년' 옵션 추가 (회의록)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">4</span> 운영정보</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>타입</th></tr>
+              <tr><td>운영부서</td><td>select + 관리 팝업</td></tr>
+              <tr><td>재원</td><td>select + 관리 팝업</td></tr>
+              <tr><td>운영기간(일자)</td><td>date~date</td></tr>
+              <tr><td>차수(분반) 정보</td><td>반복 입력 블록</td></tr>
+              <tr><td>· 교육시간(차수별)</td><td>select(1~30시간)</td></tr>
+              <tr><td>중복신청여부</td><td>toggle</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li class="em">운영기간(일자) 항목 신규 추가</li>
+              <li class="em">재원 select 신규 추가 — 운영형태·다면적역량과 마찬가지로 B.2 검색조건·목록과 동일 값 공유</li>
+              <li class="em">운영부서·재원 select 옆 [⚙ 관리] 버튼(총괄관리자 전용) 클릭 시 마스터 관리 팝업 표시 — 추가/삭제 가능, B.2 프로그램 리스트와 동일 팝업 컴포넌트 공용</li>
+              <li class="em">이미 해당 값으로 등록된 프로그램이 1건 이상 있으면 삭제 불가 얼럿 표시</li>
+              <li class="em"><b>차수(분반) 입력 방식 변경</b> — 기존 "N건 입력 후 일괄 생성" 방식 폐기, [+ 차수 추가] 클릭 시 동일한 입력 블록이 바로 아래 행에 추가되는 방식으로 변경(기존 시스템 이미지 참고). 최초 1개 블록은 삭제 불가, 이후 추가된 블록마다 차수/분반명 입력 + [⊗ 삭제] 제공</li>
+              <li class="em">차수 입력 블록에 <b>교육시간</b> select 신규 추가 — 1~30시간, 1시간 단위</li>
+              <li>차수(분반) 항목은 모집인원(최대/대기)·교/강사·교육장소 포함, 교육기관 항목은 제외</li>
+              <li>신청기간·교육기간을 일시(날짜+시간) 단위로 지정</li>
+              <li class="em">차수별 중복 신청 가능 여부 설정</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">5</span> 역량점수</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>타입</th></tr>
+              <tr><td>운영 형태</td><td>toggle(2종)</td></tr>
+              <tr><td>다면적역량</td><td>toggle(3종 단일선택)</td></tr>
+              <tr><td>총 교육시간</td><td>number(자동합산, 읽기전용)</td></tr>
+              <tr><td>역량점수</td><td>number(자동입력)</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>운영 형태 + 총 교육시간 기준으로 역량점수 자동 산정</li>
+              <li class="em">다면적역량(창의/공감/글로벌)은 3개 중 1개만 단일 선택</li>
+              <li class="em">자동 산정 값은 사용자가 직접 수정 가능</li>
+              <li class="em"><b>총 교육시간은 교육정보(차수)의 각 차수별 교육시간 select 값을 합산해 자동 계산</b> — 읽기전용, 차수 추가/삭제·교육시간 변경 시 실시간 재계산(수동 입력 폐기)</li>
+              <li>[부여 기준 보기] 클릭 시 배점 기준표 팝업 표시</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">6</span> 접수·만족도</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>온라인접수 사용 시 신청 오픈</li><li>만족도조사 실시기간 지정</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">7</span> 인쇄양식</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>신청서·참여확인서·수료증 양식 선택</li><li>발급기관장 지정</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">8</span> 내용</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>리치텍스트 에디터(별도 컴포넌트)로 구현 — 서식·이미지·표 삽입 지원</li>
+              <li class="em">기존 '인쇄양식 및 내용' 그룹에서 분리</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">9</span> 하단 액션 <span class="tail">신규</span></div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>[임시저장 불러오기] · [임시저장] · [저장] 3버튼</li>
+              <li class="em">[임시저장]은 계정별 1개 슬롯만 유지 — 다시 [임시저장] 클릭 시 이전 임시데이터를 덮어씀(이력 보관 없음)</li>
+              <li class="em">[임시저장 불러오기] 클릭 시 <b>가장 최근에 저장된 임시데이터 1건만</b> 폼에 채워 넣는다 — 목록에서 고르는 방식 아님</li>
+              <li>[저장] 클릭 시 정식 등록되며 해당 계정의 임시저장 슬롯은 유지(별도 삭제 없음)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bottom-3">
+
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>3.1</td></tr>
+          <tr><th>화면명</th><td>비교과 프로그램 등록</td></tr>
+          <tr><th>메뉴 경로</th><td>비교과 프로그램 &gt; 프로그램 관리 &gt; 등록</td></tr>
+          <tr><th>유형</th><td>입력 · 폼형</td></tr>
+          <tr><th>사용자</th><td>총괄관리자 · 부서운영자</td></tr>
+          <tr><th>목적</th><td>체험 프로그램 신규 등록·수정</td></tr>
+          <tr><th>연계</th><td>B.2 프로그램 리스트 · 신청자 관리 · 통계 · A.3·E.1 프로그램 목록(최상단 고정) · B.8 사용자 관리</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>운영기간(일자)</b>기존 교육시간만 → 운영일자 항목 보완</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>차수(분반) 반복 블록 입력</b>[+ 차수 추가] 클릭 시 동일 입력 블록이 바로 아래에 추가(기존 N건 일괄생성 방식 폐기), 교육시간(1~30시간) 항목 신규 · 총 교육시간 자동합산</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>중복신청 제한</b>차수별 중복 신청 가능 여부 설정</div></div>
+        <div class="stepline"><span class="tag ph-4">S4</span><div class="tx"><b>전체 학년 값</b>초·중·고 각 학교급에 전체 학년 옵션 추가</div></div>
+        <div class="stepline"><span class="tag ph-5">S5</span><div class="tx"><b>역량점수 자동산정</b>운영 형태·총 교육시간 기준 자동 계산, 수정 가능 · 기준표 팝업 제공</div></div>
+        <div class="stepline"><span class="tag ph-1">S6</span><div class="tx"><b>재원 추가 및 마스터 관리</b>재원 select 신규 추가, 운영부서·재원 옆 [⚙ 관리] 팝업으로 총괄관리자가 추가/삭제(사용 중인 값은 삭제 불가)</div></div>
+        <div class="stepline"><span class="tag ph-2">S7</span><div class="tx"><b>최상단 고정 권한 제한</b>총괄관리자만 설정 가능, 학생·교사 목록(A.3·E.1)에서만 최상단 노출 · 최근 고정순 · 운영완료·취소 시 자동 해제</div></div>
+        <div class="stepline"><span class="tag ph-3">S8</span><div class="tx"><b>임시저장 불러오기</b>계정별 1개 슬롯, [불러오기] 클릭 시 가장 최근 임시데이터 1건만 복원</div></div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">초·중·고 학교급별 학년(전체 학년 포함) 신청 대상 적용, 역량점수는 운영 형태·총 교육시간 기준으로 자동 산정.</div>
+        <div class="std-box">부서운영자로 로그인한 경우 조회·관리 범위는 본인 소속 운영부서가 등록한 프로그램으로 제한된다 — 화면 입력이 아닌 로그인 계정의 소속 운영부서로 서버단에서 강제(B.8 사용자 관리 연계, 스타일규칙 5-1항과 동일 원칙). 총괄관리자는 제한 없이 전체 조회.</div>
+        <div class="std-box">최상단 고정 체크박스는 총괄관리자 계정에서만 활성화된다(부서운영자는 비활성화). 고정 효과는 학생·교사 프로그램 목록(A.3·E.1)에만 적용되며 B.2 관리자 목록에는 영향을 주지 않는다. 운영부서·재원 마스터 값 삭제는 총괄관리자만 가능하며, 해당 값으로 등록된 프로그램이 있으면 삭제 불가.</div>
+        <div class="exc-box"><b>[늘리기]·[일괄삭제] 생성 금지</b> — 팀 표준 제외.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector(".doc");
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM), total = doc.scrollHeight;
+    var n = Math.max(1, Math.ceil(total / pageH));
+    if(n < 2) return;
+    var layer = document.createElement("div");
+    layer.className = "page-break-guide"; layer.style.height = total + "px";
+    for(var i = 1; i < n; i++){
+        var l = document.createElement("div");
+        l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+        layer.appendChild(l);
+    }
+    doc.appendChild(layer);
+})();
+</script>
+
+</body>
+</html>

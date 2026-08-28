@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B.8. 사용자 관리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+/* A4 가로(297mm) 인쇄 전용 고정폭 */
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+.doc + .doc{ margin-top:16px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+/* 페이지 헤더 : 회색 캡 */
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-num.on{ background:#1a73e8; color:#fff; }
+.page-num.page-right{ margin-left:auto; flex-shrink:0; align-self:center; }
+.crumb-sep{ color:#bbb; font-size:12px; font-weight:700; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-title .cur{ font-size:12px; font-weight:700; color:#1a73e8; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+/* 2단 레이아웃 */
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+/* 캡 그룹 */
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-cap .new{ background:#e8f0fe; color:#1a73e8; font-size:10px; padding:1px 8px; border-radius:8px; font-weight:700; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+/* 그룹 내 하위 구분 */
+.sub{ margin-bottom:11px; } .sub:last-child{ margin-bottom:0; }
+.sub-cap{ display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; color:#666; margin-bottom:6px; }
+.sub-cap .mark{ background:#eee; color:#888; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap; }
+.sub-cap .mark.spec{ background:#e8f0fe; color:#1a73e8; }
+.sub-cap .icon{ width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.sub-cap .tail{ margin-left:auto; font-size:10.5px; font-weight:500; color:#aaa; }
+
+/* 우측 정의 프레임 */
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+/* 요구사항 블록 */
+.rq{ margin-bottom:11px; } .rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px; display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq p{ font-size:11px; line-height:1.5; color:#333; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; } .rq li.em::before{ color:#c62828; }
+
+/* 요구사항 표 */
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; } .rqt .c{ text-align:center; }
+.rqt .yes{ color:#c62828; font-weight:700; text-align:center; } .rqt .no{ color:#ccc; text-align:center; }
+.rqt.spec th:first-child{ width:66px; }
+
+/* 버튼 */
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; } .btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-success{ background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.btn-danger { background:#fce4ec; color:#c62828; border:1px solid #ef9a9a; }
+.btn-lg{ height:30px; padding:5px 18px; font-size:12px; } .btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+.btn[disabled]{ background:#f0f0f0; color:#bbb; border:1px solid #e0e0e0; cursor:not-allowed; }
+
+/* 폼 요소 */
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input.ro{ background:#f0f0f0; color:#666; }
+textarea.mf-input{ height:auto; min-height:58px; width:100%; resize:vertical; line-height:1.6; }
+.charcnt{ text-align:right; font-size:10.5px; color:#aaa; margin-top:3px; }
+.upload{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:#aaa; }
+.help-txt{ font-size:10.5px; color:#888; line-height:1.4; } .req{ color:#c62828; margin-left:2px; } .w-full{ width:100%; } .w-half{ width:calc(50% - 4px); }
+
+/* 세그먼트 / 스위치 / 체크 */
+.seg{ display:inline-flex; border:1px solid #ddd; border-radius:4px; overflow:hidden; }
+.seg span{ padding:4px 14px; font-size:11px; color:#666; background:#fff; border-left:1px solid #eee; }
+.seg span:first-child{ border-left:none; } .seg span.on{ background:#1a73e8; color:#fff; font-weight:600; }
+.sw{ display:inline-flex; border:1px solid #ddd; border-radius:13px; overflow:hidden; font-size:11px; }
+.sw span{ padding:3px 13px; } .sw .on{ background:#e8f0fe; color:#1a73e8; font-weight:600; } .sw .off{ background:#fff; color:#bbb; }
+.check-group{ display:flex; gap:14px; flex-wrap:wrap; }
+.check-item{ display:inline-flex; align-items:center; gap:5px; font-size:11px; line-height:1.4; }
+.check-box{ width:14px; height:14px; border:1px solid #ccc; border-radius:3px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:9px; flex-shrink:0; color:#1a73e8; background:#fff; }
+.check-box.on{ background:#e8f0fe; border-color:#90caf9; }
+
+/* 라벨-값 그리드 : 기본 3쌍/행(검색) · .form 은 2열(입력폼) */
+.cg{ display:grid; grid-template-columns:78px 1fr 78px 1fr 78px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg.form{ grid-template-columns:124px 1fr; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .vl.col{ display:block; }
+.cg:not(.form) .lb:nth-last-child(-n+6), .cg:not(.form) .vl:nth-last-child(-n+6){ border-bottom:none; }
+.cg.form .lb:nth-last-child(2), .cg.form .vl:last-child{ border-bottom:none; }
+.cg.form .lb{ white-space:normal; } .cg.common .vl{ background:#fafafa; }
+
+/* 검색 액션 */
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+.cha{ width:100%; border-collapse:collapse; font-size:10.5px; margin-top:8px; }
+.cha th{ background:#f8f8f8; padding:5px 6px; border:1px solid #eee; color:#555; font-weight:600; }
+.cha td{ padding:5px 6px; border:1px solid #eee; text-align:center; }
+
+/* 규칙 박스 */
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec;
+  border-radius:5px; margin-top:5px; line-height:1.5; } .exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe;
+  border-radius:5px; margin-top:5px; line-height:1.5; } .std-box:first-child{ margin-top:0; }
+
+/* 특화 기능 요약 */
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px;
+  border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; } .ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; } .ph-4{ background:#e8f5e9; color:#2e7d32; } .ph-5{ background:#fce4ec; color:#c2185b; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; } .stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+
+/* 집계 카드 */
+.stat-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:11px; }
+.stat-cards.c7{ grid-template-columns:repeat(7,1fr); }
+.stat-card{ background:#f8f8f8; border-radius:6px; padding:9px 8px; text-align:center; }
+.stat-card .label{ font-size:10.5px; color:#888; line-height:1.4; }
+.stat-card .val{ font-size:18px; font-weight:700; margin-top:3px; line-height:1.2; }
+
+/* 데이터 그리드 */
+.grid-wrap{ position:relative; }
+.grid{ width:100%; border-collapse:collapse; font-size:10.5px; border-top:2px solid #1a73e8; }
+.grid th{ background:#f8f8f8; color:#555; font-weight:600; padding:6px 5px; border-bottom:1px solid #e0e0e0; text-align:center; white-space:nowrap; line-height:1.4; }
+.grid th.sortable::after{ content:' ↕'; color:#aaa; font-size:9px; }
+.grid td{ padding:6px 5px; text-align:center; border-bottom:1px solid #eee; line-height:1.4; }
+.grid td.link{ color:#1a73e8; text-decoration:underline; cursor:pointer; }
+.grid tr.off{ opacity:.55; } .grid tr.off td{ text-decoration:line-through; }
+.tag.t-done{ background:#e8f5e9; color:#2e7d32; } .tag.t-wait{ background:#fff3e0; color:#e65100; } .tag.t-canc{ background:#fce4ec; color:#c62828; }
+.tag.t-part{ background:#e8f0fe; color:#1a73e8; } .tag.t-hold{ background:#f1f1f1; color:#666; } .tag.t-none{ background:#eceff2; color:#888; }
+.tag{ padding:1px 7px; border-radius:3px; font-size:9.5px; font-weight:700; white-space:nowrap; }
+.no-mail{ color:#c62828; font-size:10px; font-weight:600; }
+.row-act{ display:inline-flex; gap:4px; flex-wrap:wrap; justify-content:center; }
+.satis{ font-size:10.5px; } .satis.done{ color:#2e7d32; font-weight:600; } .satis.wait{ color:#999; }
+
+/* 일괄 제어 바 */
+.batch{ display:flex; align-items:center; gap:6px; margin-bottom:9px; flex-wrap:wrap; }
+.batch .pfx{ color:#2e7d32; font-size:11px; font-weight:600; margin-right:4px; }
+.batch .sp{ margin-left:auto; }
+
+/* 하단 유틸 · 페이징 */
+.bottom-bar{ position:relative; display:flex; align-items:center; margin-top:2px; }
+.pager{ position:absolute; left:0; right:0; display:flex; justify-content:center; gap:3px; list-style:none; }
+.pager a{ display:block; padding:4px 9px; border:1px solid #ddd; border-radius:4px;
+  background:#fff; color:#666; text-decoration:none; font-size:10.5px; line-height:1.4; }
+.pager li.on a{ background:#1a73e8; color:#fff; border-color:#1a73e8; }
+.pagination{ display:flex; justify-content:center; list-style:none; gap:2px; }
+.pagination a{ display:block; padding:4px 9px; border:1px solid #ddd; background:#fff; color:#666; text-decoration:none; font-size:11px; border-radius:2px; }
+.pagination li.active a{ background:#1a73e8; color:#fff; border-color:#1a73e8; }
+
+/* 좌측메뉴 미니 목업 */
+.menu-mock{ width:220px; }
+.menu-cap{ font-size:13px; font-weight:700; padding-bottom:8px; }
+.menu-progress{ height:4px; background:#e0e0e0; border-radius:2px; margin-bottom:10px; overflow:hidden; }
+.menu-progress i{ display:block; width:35%; height:100%; background:#1a73e8; }
+.menu-item{ padding:8px 2px; font-size:11px; color:#666; border-top:1px solid #eee; }
+.menu-item.active{ color:#1a73e8; font-weight:700; }
+.menu-item .arrow{ margin-right:4px; color:#1a73e8; }
+
+/* 필터 탭칩 */
+.filter-tabs{ display:flex; gap:7px; flex-wrap:wrap; }
+.ftab{ border:1px solid #e0e0e0; border-radius:16px; padding:6px 13px; font-size:10.5px; color:#666; background:#fff; }
+.ftab b{ color:#1a73e8; margin-left:3px; }
+.ftab.active{ border-color:#1a73e8; color:#1a73e8; font-weight:700; background:#e8f0fe; }
+.ftab.active b{ color:#1a73e8; }
+
+/* 카드 그리드 */
+.grid-head{ display:flex; align-items:center; gap:6px; margin-bottom:9px; font-size:12.5px; font-weight:700; }
+.grid-head .ic{ color:#1a73e8; }
+.prog-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:11px; }
+.prog-card{ border:1px solid #e0e0e0; border-radius:7px; overflow:hidden; background:#fff; }
+.prog-card.closed{ opacity:.6; }
+.prog-thumb{ height:78px; position:relative; display:flex; align-items:center; justify-content:center; font-size:26px; color:#fff; }
+.prog-thumb .tags{ position:absolute; top:6px; left:6px; display:flex; gap:4px; }
+.ptag{ font-size:8.5px; font-weight:700; padding:2px 6px; border-radius:3px; color:#fff; }
+.ptag.open{ background:#1a73e8; } .ptag.closed{ background:#8b93a0; }
+.prog-body{ padding:9px 11px 10px; }
+.prog-cat{ font-size:9px; color:#888; } .prog-cat .sep{ margin:0 4px; color:#c7ccd2; }
+.prog-title{ font-size:11.5px; font-weight:700; margin:5px 0 7px; line-height:1.35; min-height:31px; }
+.prog-meta{ font-size:9.5px; color:#666; display:flex; gap:5px; margin-bottom:3px; }
+.prog-meta .mlabel{ color:#888; font-weight:700; width:44px; flex-shrink:0; }
+.prog-foot{ margin-top:8px; } .prog-foot .btn{ width:100%; justify-content:center; }
+
+/* 업로드 드롭존 */
+.dropzone{ border:1.5px dashed #90caf9; border-radius:8px; background:#f8fbff; padding:18px; text-align:center; }
+.dropzone .ic{ font-size:22px; margin-bottom:6px; }
+.dropzone .t{ font-size:11.5px; font-weight:700; color:#1a73e8; margin-bottom:3px; }
+.dropzone .s{ font-size:10.5px; color:#888; }
+
+/* 팝업 미리보기 */
+.popup-preview{ padding:10px 14px; border:1px dashed #90caf9; border-radius:8px; background:#f8fbff; }
+.popup-preview .pv-t{ font-size:11px; font-weight:700; color:#1a73e8; margin-bottom:9px; }
+
+/* 프로그램 상세내용 (A.3 재사용) */
+.sec-h{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; margin-bottom:9px; }
+.sec-h .ic{ color:#1a73e8; }
+.detail-content{ border:1px solid #e0e0e0; border-radius:6px; padding:9px 14px; font-size:11px; line-height:1.55; color:#333; }
+
+/* --- merged from B.1 (bulk-bar, chk, profile popup, badges) --- */
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-num.page-right{ margin-left:auto; flex-shrink:0; align-self:center; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+.rq{ margin-bottom:11px; }
+.rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px; display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; }
+.rq li.em::before{ color:#c62828; }
+
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; }
+.rqt.spec th:first-child{ width:66px; }
+
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; }
+.btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-success{ background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.btn-lg{ height:30px; padding:5px 18px; font-size:12px; }
+.btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+.w-full{ width:100%; }
+
+.cg{ display:grid; grid-template-columns:82px 1fr 82px 1fr 82px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .lb:nth-last-child(-n+6), .cg .vl:nth-last-child(-n+6){ border-bottom:none; }
+
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+
+.bulk-bar{ display:flex; align-items:center; gap:6px; padding:7px 9px; background:#f8fbff;
+  border:1px solid #cfe2f7; border-radius:6px; }
+.bulk-bar .sel-count{ font-size:11px; color:#1a73e8; font-weight:700; margin-right:auto; }
+.bulk-bar .sel-count b{ font-size:12.5px; }
+.chk{ width:12px; height:12px; vertical-align:middle; accent-color:#1a73e8; margin:0; }
+
+.stat-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:11px; }
+.stat-card{ background:#f8f8f8; border-radius:6px; padding:9px 11px; }
+.stat-card .label{ font-size:10.5px; color:#888; line-height:1.4; }
+.stat-card .val{ font-size:20px; font-weight:700; margin-top:3px; line-height:1.2; }
+
+.area{ display:grid; grid-template-columns:70px 1fr 54px; align-items:center; gap:10px; margin:7px 0; font-size:11px; }
+.area .an{ font-weight:600; color:#555; }
+.area .bar{ height:16px; border-radius:8px; background:#eef1f4; overflow:hidden; }
+.area .bar i{ display:block; height:100%; border-radius:8px; }
+.area .cnt{ text-align:right; font-weight:700; }
+.a-cr i{ background:#1a73e8; } .a-em i{ background:#2e7d32; } .a-gl i{ background:#6a1b9a; }
+
+.ct{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.ct th{ background:#f8f8f8; padding:6px 5px; text-align:center; font-weight:600;
+  border-bottom:1px solid #e0e0e0; white-space:nowrap; color:#555; line-height:1.4; }
+.ct td{ padding:6px 5px; border-bottom:1px solid #eee; text-align:center; white-space:nowrap; line-height:1.4; }
+.ct tr:last-child td{ border-bottom:none; }
+.ct td.nm{ text-align:left; }
+.ct th.sortable::after{ content:' ↕'; color:#aaa; font-size:9px; }
+
+.bottom-bar{ position:relative; display:flex; align-items:center; margin-top:11px; }
+.pager{ position:absolute; left:0; right:0; display:flex; justify-content:center; gap:3px; list-style:none; }
+.pager a{ display:block; padding:4px 9px; border:1px solid #ddd; border-radius:4px;
+  background:#fff; color:#666; text-decoration:none; font-size:10.5px; line-height:1.4; }
+.pager li.on a{ background:#1a73e8; color:#fff; border-color:#1a73e8; }
+
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; } .ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; } .ph-4{ background:#e8f5e9; color:#2e7d32; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; } .stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec; border-radius:5px; margin-top:5px; line-height:1.5; }
+.exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe; border-radius:5px; margin-top:5px; line-height:1.5; }
+.std-box:first-child{ margin-top:0; }
+
+/* B.1 전용 : 학생목록 상태 태그 · 대시 */
+.tag{ padding:1px 7px; border-radius:3px; font-size:10px; font-weight:700; white-space:nowrap; }
+.t-join{ background:#e8f0fe; color:#1a73e8; }
+.t-auto{ background:#fff3e0; color:#e65100; }
+.dash{ color:#ccc; }
+
+/* B.1 전용 : 프로필 팝업 미리보기 */
+.popup-preview{ margin-top:10px; padding:10px 12px; border:1px dashed #90caf9; border-radius:8px; background:#f8fbff; position:relative; }
+.popup-preview .pt{ font-size:11px; font-weight:700; color:#1a73e8; margin-bottom:6px; }
+.pp-sec{ font-size:11px; font-weight:700; color:#333; margin:8px 0 4px; }
+.pp-sec:first-of-type{ margin-top:0; }
+.pp-tb{ margin-bottom:2px; background:#fff; }
+.mini-tb{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.mini-tb th{ background:#f8f8f8; padding:5px 6px; border:1px solid #eee; color:#555; font-weight:600; text-align:center; }
+.mini-tb td{ padding:5px 6px; border:1px solid #eee; text-align:center; }
+.mini-tb td.al{ text-align:left; }
+.pp-score{ display:flex; align-items:center; gap:12px; background:#fff; border:1px solid #e0e0e0; border-radius:6px; padding:8px 10px; }
+.pp-medal-wrap{ flex-shrink:0; text-align:center; width:56px; }
+.badge-med{ width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+           font-size:10px; color:#fff; margin-right:3px; vertical-align:middle; }
+.bm-silver{ background:radial-gradient(circle at 35% 30%,#e9edf1,#aab4bf); border:1px solid #cfd6dd; color:#5a6472; }
+.bm-gold{ background:radial-gradient(circle at 35% 30%,#ffe08a,#e0a92e); border:1px solid #f2cf6b; color:#7a5a10; }
+.pp-medal{ width:32px; height:32px; font-size:13px; }
+.pp-medal-lb{ font-size:10px; color:#888; margin-top:3px; white-space:nowrap; }
+.area-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
+.dot-cr{ background:#1a73e8; } .dot-em{ background:#2e7d32; } .dot-gl{ background:#6a1b9a; }
+.pt-cr{ color:#1a73e8; font-weight:700; } .pt-em{ color:#2e7d32; font-weight:700; } .pt-gl{ color:#6a1b9a; font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb"><span class="page-num strong">화면 B.8</span></div>
+    <div><div class="page-title">사용자 관리</div><div class="page-desc">관리자 계정을 <b>총괄관리자 / 부서운영자</b> 2단계 등급권한으로 관리하는 화면(서비스관리 &gt; 사용자 관리). 총괄관리자는 전체 메뉴에 접근하며, 부서운영자는 본인 소속 <b>운영부서가 등록·운영하는 프로그램 관리 기능</b>(B.3·B.4·B.5)만 이용할 수 있다. 대학 원본 화면의 교수·조교·겸임소속·상담사소속 등 고등교육 특유 항목은 제외하고, 본 프로젝트(초·중·고 대상)에 맞게 등급권한·부서권한 중심으로 재구성했다(2026-08-27 신설).</div></div>
+    <span class="page-num page-right">PAGE 1</span>
+  </div>
+
+  <div class="layout">
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 검색조건</div>
+        <div class="grp-body">
+          <div class="cg">
+            <div class="lb">이름</div>
+            <div class="vl"><input class="mf-input w-full" placeholder="이름 검색"></div>
+            <div class="lb">아이디</div>
+            <div class="vl"><input class="mf-input w-full" placeholder="아이디 검색"></div>
+            <div class="lb">등급권한</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>총괄관리자</option><option>부서운영자</option></select></div>
+            <div class="lb">소속 운영부서</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>산학협력단</option><option>교육혁신센터</option><option>미래인재개발팀</option><option>지역협력팀</option></select></div>
+            <div class="lb">로그인 가능여부</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>가능</option><option>불가</option></select></div>
+          </div>
+          <div class="search-act">
+            <button class="btn btn-outline">↻ 새로고침</button>
+            <button class="btn btn-primary">🔍 조회</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 선택 사용자 액션 <span class="tail">등급권한 · 부서권한 일괄 변경</span></div>
+        <div class="grp-body">
+          <div class="bulk-bar">
+            <span class="sel-count">선택 <b>0</b>명</span>
+            <span style="font-size:11px;color:#555;">등급권한</span>
+            <select class="filter-select" style="width:120px;"><option>변경 선택</option><option>총괄관리자로 변경</option><option>부서운영자로 변경</option></select>
+            <span style="font-size:11px;color:#555;">부서권한</span>
+            <select class="filter-select" style="width:150px;"><option>변경 선택</option><option>산학협력단</option><option>교육혁신센터</option><option>미래인재개발팀</option><option>지역협력팀</option></select>
+            <button class="btn btn-outline">적용</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 사용자 목록 <span class="tail">전체 5건</span></div>
+        <div class="grp-body">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:9px;">
+            <button class="btn btn-primary">+ 교직원등록</button>
+          </div>
+          <div class="grid-wrap">
+            <table class="grid">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" class="chk"></th>
+                  <th>이름</th><th>아이디</th><th>등급권한</th><th>소속 운영부서</th><th>로그인</th><th>최근접속일</th><th>관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="checkbox" class="chk"></td>
+                  <td class="nm">박지훈</td><td class="nm">jhpark_adm</td>
+                  <td><span class="tag" style="background:#e8f0fe;color:#1a73e8;">총괄관리자</span></td>
+                  <td class="dash">－</td>
+                  <td><span class="tag t-done">가능</span></td>
+                  <td>2026-08-26</td>
+                  <td><button class="btn btn-primary btn-mini">보기</button> <button class="btn btn-danger btn-mini">삭제</button></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" class="chk"></td>
+                  <td class="nm">오세영</td><td class="nm">syoh_adm</td>
+                  <td><span class="tag" style="background:#fff3e0;color:#e65100;">부서운영자</span></td>
+                  <td>산학협력단</td>
+                  <td><span class="tag t-done">가능</span></td>
+                  <td>2026-08-25</td>
+                  <td><button class="btn btn-primary btn-mini">보기</button> <button class="btn btn-danger btn-mini">삭제</button></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" class="chk"></td>
+                  <td class="nm">임수아</td><td class="nm">saim_adm</td>
+                  <td><span class="tag" style="background:#fff3e0;color:#e65100;">부서운영자</span></td>
+                  <td>교육혁신센터</td>
+                  <td><span class="tag t-done">가능</span></td>
+                  <td>2026-08-24</td>
+                  <td><button class="btn btn-primary btn-mini">보기</button> <button class="btn btn-danger btn-mini">삭제</button></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" class="chk"></td>
+                  <td class="nm">강도윤</td><td class="nm">dykang_adm</td>
+                  <td><span class="tag" style="background:#fff3e0;color:#e65100;">부서운영자</span></td>
+                  <td>미래인재개발팀</td>
+                  <td><span class="tag t-canc">불가</span></td>
+                  <td>2026-07-02</td>
+                  <td><button class="btn btn-primary btn-mini">보기</button> <button class="btn btn-danger btn-mini">삭제</button></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" class="chk"></td>
+                  <td class="nm">문채원</td><td class="nm">cwmoon_adm</td>
+                  <td><span class="tag" style="background:#e8f0fe;color:#1a73e8;">총괄관리자</span></td>
+                  <td class="dash">－</td>
+                  <td><span class="tag t-done">가능</span></td>
+                  <td>2026-08-26</td>
+                  <td><button class="btn btn-primary btn-mini">보기</button> <button class="btn btn-danger btn-mini">삭제</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">4</span> 교직원등록 / 수정</div>
+        <div class="grp-body">
+          <div class="popup-preview">
+            <div class="pt">🔍 [팝업 미리보기] [+ 교직원등록] 또는 목록 [보기] 클릭 시 표시되는 계정 등록·수정 폼</div>
+            <div class="cg form">
+              <div class="lb">이름<span class="req">*</span></div>
+              <div class="vl"><input class="mf-input w-full" placeholder="이름"></div>
+              <div class="lb">아이디<span class="req">*</span></div>
+              <div class="vl"><input class="mf-input" style="width:180px;" placeholder="아이디"> <button class="btn btn-outline btn-mini">중복확인</button></div>
+              <div class="lb">비밀번호<span class="req">*</span></div>
+              <div class="vl"><input class="mf-input w-full" type="password" placeholder="2종 이상 조합 10자 이상"></div>
+              <div class="lb">비밀번호 확인<span class="req">*</span></div>
+              <div class="vl"><input class="mf-input w-full" type="password" placeholder="비밀번호 재입력"></div>
+              <div class="lb">등급권한<span class="req">*</span></div>
+              <div class="vl"><label><input type="radio" name="lvl" checked> 총괄관리자</label> &nbsp; <label><input type="radio" name="lvl"> 부서운영자</label></div>
+              <div class="lb">소속 운영부서</div>
+              <div class="vl"><select class="filter-select w-full" disabled><option>총괄관리자는 지정 불필요</option></select></div>
+              <div class="lb">로그인 가능여부</div>
+              <div class="vl"><label><input type="radio" name="able" checked> 가능</label> &nbsp; <label><input type="radio" name="able"> 불가</label></div>
+            </div>
+            <div class="std-box" style="margin-top:9px;">등급권한을 <b>부서운영자</b>로 선택하면 소속 운영부서 select가 활성화되며 <b>필수 입력</b>으로 전환된다 — 총괄관리자는 특정 부서에 종속되지 않으므로 비활성화(disabled) 상태를 유지한다.</div>
+            <div style="text-align:right;margin-top:10px;"><button class="btn btn-primary">저장</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">5</span> 하단 유틸</div>
+        <div class="grp-body">
+          <div class="bottom-bar" style="margin-top:0;justify-content:center;">
+            <ul class="pager"><li><a href="#">&lt;</a></li><li class="on"><a href="#">1</a></li><li><a href="#">&gt;</a></li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 검색조건</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>타입</th></tr>
+              <tr><td>이름</td><td>text</td></tr>
+              <tr><td>아이디</td><td>text</td></tr>
+              <tr><td>등급권한</td><td>select</td></tr>
+              <tr><td>소속 운영부서</td><td>select</td></tr>
+              <tr><td>로그인 가능여부</td><td>select</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>대학 원본 화면의 소속(대학/학과), 겸임소속, 상담사소속, 교직원등록 체크박스는 본 프로젝트에 미반영 — 초·중·고 대상이라 교수·조교 등 고등교육 소속체계가 없음</li>
+              <li>[새로고침] = 검색조건 초기화(쿼리스트링 제거) — 폼 reset 방식 금지, 공통 규칙과 동일</li>
+              <li class="em">조회 화면은 총괄관리자 전용 — 부서운영자는 본 화면 접근 권한 자체가 없다(로그인 권한으로 서버단 차단)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 선택 사용자 액션</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>목록 체크박스로 다중 선택 후 등급권한 드롭다운 또는 부서권한 드롭다운에서 값을 고르고 [적용] 클릭 시 선택된 사용자 전원에게 일괄 반영</li>
+              <li>등급권한을 총괄관리자로 일괄 변경하면 해당 대상들의 부서권한 값은 자동 해제된다(4번 팝업의 규칙과 동일)</li>
+              <li class="em">본인 계정을 선택해 등급권한을 낮추거나 로그인 불가로 변경하는 것은 차단 — 최소 1명의 총괄관리자는 항상 유지되어야 한다</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 사용자 목록</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>선택 체크박스 · 이름 · 아이디 · 등급권한(배지) · 소속 운영부서 · 로그인 가능여부(배지) · 최근접속일 · 관리</li>
+              <li>총괄관리자 행은 소속 운영부서 컬럼을 "－"로 표시 — 특정 부서에 종속되지 않음</li>
+              <li>[+ 교직원등록] 클릭 시 4번 팝업을 등록 모드로 오픈</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">4</span> 교직원등록 / 수정</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>이름·아이디·비밀번호는 관리자가 직접 입력해 즉시 계정 생성 — B.7 교사 임시계정과 달리 유효기간 없이 계속 사용</li>
+              <li>아이디 중복확인 필수, 비밀번호는 2종 이상 조합 10자 이상(공통 규칙과 동일)</li>
+              <li>등급권한 = 부서운영자 선택 시에만 소속 운영부서 select 활성화 및 필수 입력으로 전환</li>
+              <li>목록 [보기] 클릭 시 동일 팝업을 값이 채워진 수정 모드로 재사용(등록 폼 재구현 금지)</li>
+              <li class="em">비밀번호는 등록 시 1회만 관리자가 지정 — 이후 본인이 로그인 후 변경(비밀번호 변경 기능은 본 화면 범위 밖, 확인 필요)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">5</span> 하단 유틸</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>페이징 중앙 정렬 — 사용자 목록은 Excel 다운로드 대상 아님(개인 계정정보라 미제공)</li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="bottom-3">
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>B.8</td></tr>
+          <tr><th>화면명</th><td>사용자 관리</td></tr>
+          <tr><th>메뉴 경로</th><td>서비스관리 &gt; 사용자 관리</td></tr>
+          <tr><th>유형</th><td>조회 · 목록형</td></tr>
+          <tr><th>사용자</th><td>총괄관리자</td></tr>
+          <tr><th>목적</th><td>관리자 계정(총괄관리자/부서운영자) 등록 및 등급권한 · 부서권한 부여</td></tr>
+          <tr><th>연계</th><td>B.3/B.4/B.5 프로그램 관리(부서운영자 접근범위 제한) · B.7 교사 임시계정 관리(계정관리 패턴 참고)</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>2단계 등급권한</b>총괄관리자(전체 메뉴 접근)/부서운영자(소속 운영부서 프로그램 관리만 접근)</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>소속 운영부서 단일 지정</b>부서운영자 1명당 운영부서 1개 — B.3·B.4·B.5 조회범위를 서버단에서 제한</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>직접 계정 등록</b>이름·아이디·비밀번호를 관리자가 직접 입력해 즉시 생성, B.7 교사 임시계정과 달리 유효기간 없음</div></div>
+        <div class="stepline"><span class="tag ph-4">S4</span><div class="tx"><b>일괄 권한 변경</b>목록 다중 선택 후 등급권한·부서권한을 한 번에 변경</div></div>
+        <div class="stepline"><span class="tag ph-1">S5</span><div class="tx"><b>고등교육 항목 제외</b>대학 원본 화면의 교수·조교·겸임소속·상담사소속 항목은 미반영(초·중·고 대상)</div></div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">부서운영자의 프로그램 관리 조회범위는 화면 입력이 아닌 <b>로그인 계정의 소속 운영부서</b>로 서버단에서 강제한다(스타일규칙 5-1항과 동일 원칙) — B.3 프로그램 등록·B.4 지원자 관리·B.5 통계에 적용되며, B.1 학생조회·B.2 프로그램리스트·B.6 역량인증제관리·B.7 교사 임시계정 관리는 총괄관리자 전용이다.</div>
+        <div class="std-box">등급권한이 총괄관리자인 계정은 소속 운영부서를 지정하지 않는다 — 부서권한 선택은 부서운영자에게만 필수이며, 총괄관리자로 전환 시 기존 부서권한 값은 자동 해제된다.</div>
+        <div class="exc-box"><b>[늘리기]·[일괄삭제] 생성 금지</b> — 팀 표준 제외.</div>
+        <div class="exc-box"><b>교수·조교 등 고등교육 특유 소속등급 미반영</b> — 본 프로젝트는 초·중·고 대상이므로 대학 원본 화면의 소속(대학/학과)·겸임소속·상담사소속 개념을 가져오지 않는다.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector(".doc");
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM), total = doc.scrollHeight;
+    var n = Math.max(1, Math.ceil(total / pageH));
+    if(n < 2) return;
+    var layer = document.createElement("div");
+    layer.className = "page-break-guide"; layer.style.height = total + "px";
+    for(var i = 1; i < n; i++){
+        var l = document.createElement("div");
+        l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+        layer.appendChild(l);
+    }
+    doc.appendChild(layer);
+})();
+</script>
+</body>
+</html>

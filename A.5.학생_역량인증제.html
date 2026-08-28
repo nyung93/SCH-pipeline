@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A.5 역량 인증제</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+/* A4 가로(297mm) 인쇄 전용 고정폭 */
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+.doc + .doc{ margin-top:16px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+/* 페이지 헤더 : 회색 캡 */
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-num.on{ background:#1a73e8; color:#fff; }
+.page-num.page-right{ margin-left:auto; flex-shrink:0; align-self:center; }
+.crumb-sep{ color:#bbb; font-size:12px; font-weight:700; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+/* 2단 레이아웃 */
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+/* 캡 그룹 */
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-cap .new{ background:#e8f0fe; color:#1a73e8; font-size:10px; padding:1px 8px; border-radius:8px; font-weight:700; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+/* 그룹 내 하위 구분 */
+.sub{ margin-bottom:11px; }
+.sub:last-child{ margin-bottom:0; }
+.sub-cap{ display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; color:#666; margin-bottom:6px; }
+.sub-cap .mark{ background:#eee; color:#888; font-size:10.5px; font-weight:700;
+  padding:2px 8px; border-radius:4px; white-space:nowrap; }
+.sub-cap .mark.spec{ background:#e8f0fe; color:#1a73e8; }
+.sub-cap .icon{ width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.sub-cap .tail{ margin-left:auto; font-size:10.5px; font-weight:500; color:#aaa; }
+
+/* 우측 정의 프레임 */
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+/* 요구사항 블록 */
+.rq{ margin-bottom:11px; }
+.rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px;
+  display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq p{ font-size:11px; line-height:1.5; color:#333; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; }
+.rq li.em::before{ color:#c62828; }
+
+/* 요구사항 표 */
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; }
+.rqt .c{ text-align:center; }
+.rqt .yes{ color:#c62828; font-weight:700; text-align:center; }
+.rqt .no{ color:#ccc; text-align:center; }
+.rqt.spec th:first-child{ width:66px; }
+
+/* 버튼 */
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; }
+.btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-success{ background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.btn-danger { background:#fce4ec; color:#c62828; border:1px solid #ef9a9a; }
+.btn-lg{ height:30px; padding:5px 18px; font-size:12px; }
+.btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+.btn[disabled]{ background:#f0f0f0; color:#bbb; border:1px solid #e0e0e0; cursor:not-allowed; }
+
+/* 폼 요소 */
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+textarea.mf-input{ height:auto; min-height:58px; width:100%; resize:vertical; line-height:1.6; }
+.charcnt{ text-align:right; font-size:10.5px; color:#aaa; margin-top:3px; }
+.upload{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:#aaa; }
+.help-txt{ font-size:10.5px; color:#888; line-height:1.4; }
+.req{ color:#c62828; margin-left:2px; }
+.w-full{ width:100%; }
+
+/* 세그먼트 / 스위치 / 체크 */
+.seg{ display:inline-flex; border:1px solid #ddd; border-radius:4px; overflow:hidden; }
+.seg span{ padding:4px 14px; font-size:11px; color:#666; background:#fff; border-left:1px solid #eee; }
+.seg span:first-child{ border-left:none; }
+.seg span.on{ background:#1a73e8; color:#fff; font-weight:600; }
+.sw{ display:inline-flex; border:1px solid #ddd; border-radius:13px; overflow:hidden; font-size:11px; }
+.sw span{ padding:3px 13px; }
+.sw .on{ background:#e8f0fe; color:#1a73e8; font-weight:600; }
+.sw .off{ background:#fff; color:#bbb; }
+.check-group{ display:flex; gap:14px; flex-wrap:wrap; }
+.check-item{ display:inline-flex; align-items:center; gap:5px; font-size:11px; line-height:1.4; }
+.check-box{ width:14px; height:14px; border:1px solid #ccc; border-radius:3px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:9px; flex-shrink:0; color:#1a73e8; background:#fff; }
+.check-box.on{ background:#e8f0fe; border-color:#90caf9; }
+
+/* 라벨-값 그리드 : 기본 3쌍/행(검색) · .form 은 2열(입력폼) */
+.cg{ display:grid; grid-template-columns:78px 1fr 78px 1fr 78px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg.form{ grid-template-columns:124px 1fr; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .vl.col{ display:block; }
+.cg:not(.form) .lb:nth-last-child(-n+6), .cg:not(.form) .vl:nth-last-child(-n+6){ border-bottom:none; }
+.cg.form .lb:nth-last-child(2), .cg.form .vl:last-child{ border-bottom:none; }
+.cg.form .lb{ white-space:normal; }
+.cg.common .vl{ background:#fafafa; }
+
+/* 검색 액션 */
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+
+/* 차수 미니 테이블 */
+.cha{ width:100%; border-collapse:collapse; font-size:10.5px; margin-top:8px; }
+.cha th{ background:#f8f8f8; padding:5px 6px; border:1px solid #eee; color:#555; font-weight:600; }
+.cha td{ padding:5px 6px; border:1px solid #eee; text-align:center; }
+
+/* 통계 카드 / 영역 바 (B.5 공용) */
+.stat-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:11px; }
+.stat-card{ background:#f8f8f8; border-radius:6px; padding:9px 11px; }
+.stat-card .label{ font-size:10.5px; color:#888; line-height:1.4; }
+.stat-card .val{ font-size:20px; font-weight:700; margin-top:3px; line-height:1.2; }
+.area{ display:grid; grid-template-columns:70px 1fr 54px; align-items:center; gap:10px; margin:7px 0; font-size:11px; }
+.area .an{ font-weight:600; color:#555; }
+.area .bar{ height:16px; border-radius:8px; background:#eef1f4; overflow:hidden; }
+.area .bar i{ display:block; height:100%; border-radius:8px; }
+.area .cnt{ text-align:right; font-weight:700; }
+.a-cr i{ background:#1a73e8; } .a-em i{ background:#2e7d32; } .a-gl i{ background:#6a1b9a; }
+
+/* 콘텐츠 표 (B.5 공용) */
+.ct{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.ct th{ background:#f8f8f8; padding:6px 5px; text-align:center; font-weight:600;
+  border-bottom:1px solid #e0e0e0; white-space:nowrap; color:#555; line-height:1.4; }
+.ct td{ padding:6px 5px; border-bottom:1px solid #eee; text-align:center; white-space:nowrap; line-height:1.4; }
+.ct tr:last-child td{ border-bottom:none; }
+.ct td.nm{ text-align:left; }
+
+/* 규칙 박스 */
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec;
+  border-radius:5px; margin-top:5px; line-height:1.5; }
+.exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe;
+  border-radius:5px; margin-top:5px; line-height:1.5; }
+.std-box:first-child{ margin-top:0; }
+
+/* 특화 기능 요약 */
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px;
+  border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; }
+.ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; }
+.ph-4{ background:#e8f5e9; color:#2e7d32; }
+.ph-5{ background:#fce4ec; color:#c2185b; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; }
+.stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+
+/* ===== A.5 전용 콘텐츠 스타일 : 디지털 배지 · 인증서 ===== */
+.medal-tier{ display:flex; align-items:stretch; gap:8px; margin-bottom:9px; }
+.medal-tier:last-child{ margin-bottom:0; }
+.tier-tag{ writing-mode:vertical-rl; background:linear-gradient(180deg,#cfd4d9,#8b93a0); color:#fff; font-size:9px; font-weight:700;
+  letter-spacing:1.5px; padding:10px 5px; border-radius:4px; text-align:center; flex-shrink:0; }
+.tier-tag.gold{ background:linear-gradient(180deg,#f2cf6b,#c07a12); }
+.tier-medals{ display:flex; gap:7px; flex:1; }
+.medal-item{ flex:1; text-align:center; border:1px solid #e0e0e0; border-radius:7px; padding:8px 4px; }
+.medal-item.pick{ border-color:#1a73e8; background:#e8f0fe; }
+.medal-item.lock{ opacity:.5; }
+.medal-circle{ width:44px; height:44px; border-radius:50%; margin:0 auto 5px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; border:3px solid #c9ced4; background:radial-gradient(circle at 40% 35%,#2b3c5c,#101a2c 78%); }
+.medal-circle.gold{ border-color:#e0a92e; }
+.medal-item.lock .medal-circle{ border-color:#d7dade; background:#eef0f1; }
+.medal-circle .sch{ font-size:7.5px; font-weight:700; color:#fff; letter-spacing:.3px; }
+.medal-item.lock .medal-circle .sch{ color:#c2c8cf; }
+.medal-circle .ic{ font-size:13px; margin-top:1px; }
+.medal-name{ font-size:9.5px; font-weight:700; margin-top:2px; }
+.medal-tag{ font-size:8px; font-weight:700; padding:1px 6px; border-radius:8px; margin-top:3px; display:inline-block; }
+.mt-pick{ background:#e8f0fe; color:#1a73e8; }
+.mt-none{ background:#f0f2f3; color:#95a0ac; }
+
+.tie-box{ margin-top:2px; padding:9px 12px; border:1px dashed #1a73e8; border-radius:6px; background:#f8fbff; }
+.tie-box .tt{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:7px; }
+.tie-opts{ display:flex; gap:7px; }
+.tie-opt{ flex:1; border:1px solid #1a73e8; border-radius:5px; padding:6px; text-align:center; font-size:10.5px; font-weight:700; color:#1a73e8; background:#fff; }
+.tie-opt.sel{ background:#1a73e8; color:#fff; }
+.tie-act{ text-align:center; margin-top:7px; }
+
+.area-dot{ width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:4px; }
+.dot-cr{ background:#1a73e8; } .dot-em{ background:#2e7d32; } .dot-gl{ background:#6a1b9a; }
+
+.cert-wrap{ display:flex; justify-content:center; padding:8px 0 4px; }
+.cert-card{ width:600px; border:3px double #1a73e8; border-radius:4px; padding:24px 32px; text-align:center; background:#fdfdfb; position:relative; }
+.cert-card::before{ content:''; position:absolute; inset:8px; border:1px solid #e0a92e; border-radius:2px; pointer-events:none; }
+.cert-org{ font-size:11px; color:#666; letter-spacing:1px; }
+.cert-title{ font-size:20px; font-weight:700; color:#1a73e8; margin:6px 0 14px; letter-spacing:2px; }
+.cert-medal{ width:70px; height:70px; border-radius:50%; margin:0 auto 12px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; border:4px solid #c9ced4; background:radial-gradient(circle at 40% 35%,#2b3c5c,#101a2c 78%); }
+.cert-medal .sch{ font-size:10px; font-weight:700; color:#fff; }
+.cert-medal .ic{ font-size:22px; margin-top:2px; }
+.cert-info{ width:100%; border-collapse:collapse; margin:14px 0; font-size:11.5px; }
+.cert-info td{ padding:5px 8px; text-align:left; }
+.cert-info td.k{ color:#666; width:100px; font-weight:700; text-align:right; padding-right:12px; }
+.cert-body-txt{ font-size:11px; line-height:1.8; color:#333; margin:14px 0; }
+.cert-foot{ display:flex; justify-content:space-between; align-items:center; margin-top:18px; padding-top:12px; border-top:1px solid #e0e0e0; font-size:10.5px; text-align:left; }
+.cert-seal{ width:52px; height:52px; border:2px solid #c62828; border-radius:50%; color:#c62828; display:flex;
+  align-items:center; justify-content:center; font-size:9.5px; font-weight:700; transform:rotate(-8deg); text-align:center; line-height:1.25; }
+.cert-actions{ text-align:center; margin-top:14px; display:flex; gap:8px; justify-content:center; }
+</style>
+</head>
+<body>
+
+<!-- ===================== PAGE 1 : 디지털 배지 · 역량점수 현황 ===================== -->
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb">
+      <span class="page-num strong">화면 A.5</span>
+    </div>
+    <div>
+      <div class="page-title">디지털 배지 · 역량점수 현황</div>
+      <div class="page-desc">학생이 자신의 역량점수·디지털 배지·이수내역을 확인하는 화면. B.6 역량인증제관리(관리자)와 동일한 배지 발급 기준(제7조)을 학생 시점에서 보여준다. 배지 등급은 총점 기준(실버 15점↑ / 골드 30점↑), 영역은 최고 득점 영역 기준으로 부여하며 동점 시 학생이 직접 선택한다.</div>
+    </div>
+    <span class="page-num page-right">PAGE 1</span>
+  </div>
+
+  <div class="layout">
+
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 좌측 메뉴</div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">메뉴 그룹</div>
+            <div class="vl">역량개발 <span class="help-txt">진행 바 35%</span></div>
+            <div class="lb">하위 메뉴</div>
+            <div class="vl">
+              <div class="check-group">
+                <span>프로그램 신청</span>
+                <span>프로그램 신청내역</span>
+                <span style="color:#1a73e8;font-weight:700;">▶ 역량 인증제 (현재 화면)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 학생 기본정보</div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">이름</div><div class="vl">이도현</div>
+            <div class="lb">학교</div><div class="vl">순천향중학교</div>
+            <div class="lb">학년</div><div class="vl">1학년</div>
+            <div class="lb">아이디</div><div class="vl">dhlee05@sch.ac.kr</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 디지털 배지 <span class="tail">배지 등급 · 영역 갤러리 · 다음 등급 진행률</span></div>
+        <div class="grp-body">
+          <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px;">
+            <button class="btn btn-outline btn-mini">📋 배지 기준 보기</button>
+            <button class="btn btn-primary btn-mini">🖨 인증서 출력</button>
+          </div>
+
+          <div class="medal-tier">
+            <div class="tier-tag">SILVER</div>
+            <div class="tier-medals">
+              <div class="medal-item pick">
+                <div class="medal-circle"><span class="sch">SCH</span><span class="ic">💡</span></div>
+                <div class="medal-name">창의 실버</div>
+                <div class="medal-tag mt-pick">선택가능</div>
+              </div>
+              <div class="medal-item pick">
+                <div class="medal-circle"><span class="sch">SCH</span><span class="ic">🤝</span></div>
+                <div class="medal-name">공감 실버</div>
+                <div class="medal-tag mt-pick">선택가능</div>
+              </div>
+              <div class="medal-item lock">
+                <div class="medal-circle"><span class="sch">SCH</span><span class="ic">🌐</span></div>
+                <div class="medal-name">글로벌 실버</div>
+                <div class="medal-tag mt-none">미해당</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="medal-tier" style="margin-bottom:0;">
+            <div class="tier-tag gold">GOLD</div>
+            <div class="tier-medals">
+              <div class="medal-item lock">
+                <div class="medal-circle gold"><span class="sch">SCH</span><span class="ic">💡</span></div>
+                <div class="medal-name">창의 골드</div>
+                <div class="medal-tag mt-none">30점↑</div>
+              </div>
+              <div class="medal-item lock">
+                <div class="medal-circle gold"><span class="sch">SCH</span><span class="ic">🤝</span></div>
+                <div class="medal-name">공감 골드</div>
+                <div class="medal-tag mt-none">30점↑</div>
+              </div>
+              <div class="medal-item lock">
+                <div class="medal-circle gold"><span class="sch">SCH</span><span class="ic">🌐</span></div>
+                <div class="medal-name">글로벌 골드</div>
+                <div class="medal-tag mt-none">30점↑</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:11px;padding-top:10px;border-top:1px dashed #e0e0e0;">
+            <div style="font-size:11px;font-weight:700;color:#333;margin-bottom:7px;">🎯 다음 등급까지 남은 점수</div>
+            <div class="area" style="grid-template-columns:56px 1fr 96px;margin:6px 0;">
+              <div class="an">실버</div>
+              <div class="bar"><i style="width:100%;background:linear-gradient(90deg,#cfd4d9,#8b93a0);"></i></div>
+              <div class="cnt" style="color:#2e7d32;">✓ 달성 완료</div>
+            </div>
+            <div class="area" style="grid-template-columns:56px 1fr 96px;margin:6px 0;">
+              <div class="an">골드</div>
+              <div class="bar"><i style="width:53%;background:linear-gradient(90deg,#f2cf6b,#c07a12);"></i></div>
+              <div class="cnt" style="color:#c07a12;">14점 남음</div>
+            </div>
+            <div class="help-txt">전체 누적 역량점수(창의+공감+글로벌 합산 16점) 기준 — 실버 15점 이상 · 골드 30점 이상(제7조①). 기준표는 B.6 역량인증제관리 [기준 안내] 팝업과 동일 데이터 재사용</div>
+          </div>
+
+          <div style="margin-top:10px;padding:10px 12px;border:1px dashed #90caf9;border-radius:8px;background:#f8fbff;">
+            <div style="font-size:11px;font-weight:700;color:#1a73e8;margin-bottom:6px;">🔍 [팝업 미리보기] [📋 배지 기준 보기] 클릭 시 표시되는 배지 등급 기준표 — B.6 역량인증제관리 [기준 안내] 팝업(PAGE 2)과 동일 데이터·컴포넌트 재사용(읽기 전용)</div>
+            <table class="rqt" style="border:1px solid #e0e0e0;">
+              <tr><th style="width:60px;">등급</th><th style="width:110px;">기준(누적 역량점수)</th><th>비고</th></tr>
+              <tr><td>실버</td><td>15점 이상</td><td>'다면적 졸업인증제' 비교과 점수 인정</td></tr>
+              <tr><td>골드</td><td>30점 이상</td><td>'다면적 졸업인증제' 비교과 점수 인정</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">4</span> 배지 선택 <span class="tail">동점 시 노출</span></div>
+        <div class="grp-body">
+          <div class="tie-box">
+            <div class="tt">🏅 최고 점수 영역이 2개 이상입니다 (창의 6점 = 공감 6점) — 받고 싶은 배지 영역을 선택해주세요</div>
+            <div class="tie-opts">
+              <div class="tie-opt sel">창의 실버 선택</div>
+              <div class="tie-opt">공감 실버 선택</div>
+            </div>
+            <div class="tie-act"><button class="btn btn-primary btn-mini">선택 완료</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">5</span> 이수 현황 요약</div>
+        <div class="grp-body">
+          <div class="stat-cards" style="grid-template-columns:repeat(5,1fr);">
+            <div class="stat-card"><div class="label">내 역량점수(총점)</div><div class="val" style="color:#1a73e8;">16</div></div>
+            <div class="stat-card"><div class="label">창의</div><div class="val" style="color:#1a73e8;">6</div></div>
+            <div class="stat-card"><div class="label">공감</div><div class="val" style="color:#2e7d32;">6</div></div>
+            <div class="stat-card"><div class="label">글로벌</div><div class="val" style="color:#6a1b9a;">4</div></div>
+            <div class="stat-card"><div class="label">이수 프로그램</div><div class="val" style="color:#333;">3건</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">6</span> 년도별 프로그램 이수내역</div>
+        <div class="grp-body">
+          <table class="ct">
+            <thead><tr><th style="width:70px;">이수년도</th><th style="text-align:left;">프로그램명</th><th style="width:90px;">영역</th><th style="width:100px;">이수일자</th><th style="width:90px;">역량점수</th></tr></thead>
+            <tbody>
+              <tr><td>2026</td><td class="nm">인성교육 워크숍</td><td><span class="area-dot dot-em"></span>공감</td><td>2026-07-18</td><td style="font-weight:700;color:#1a73e8;">+6점</td></tr>
+              <tr><td>2026</td><td class="nm">창의 로봇 경진대회</td><td><span class="area-dot dot-cr"></span>창의</td><td>2026-06-05</td><td style="font-weight:700;color:#1a73e8;">+6점</td></tr>
+              <tr><td>2025</td><td class="nm">나의 진로 설계: 꿈을 찾는 시간</td><td><span class="area-dot dot-gl"></span>글로벌</td><td>2025-11-12</td><td style="font-weight:700;color:#1a73e8;">+4점</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 좌측 메뉴</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>역량개발 그룹 하위 프로그램 신청 · 프로그램 신청내역 · 역량 인증제(활성) 서브메뉴 구성</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 학생 기본정보</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>이름 · 학교 · 학년 · 아이디 읽기전용 표시</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 디지털 배지</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>실버(15점↑) / 골드(30점↑) 2등급 × 창의 · 공감 · 글로벌 3영역 배지 갤러리</li>
+              <li>등급은 총점수 기준, 영역은 최고 득점 영역 기준 부여(제7조①②)</li>
+              <li class="em">최고 득점 영역이 아닌 배지는 '미해당'으로 비활성 표시</li>
+              <li>[🖨 인증서 출력] 클릭 시 PAGE 2 인증서 출력 화면으로 이동</li>
+              <li class="em">다음 등급까지 남은 점수 표시(신규) — 실버·골드 각각 "전체 누적 역량점수 n점 남음"으로 안내, 기준 충족 시 "✓ 달성 완료"로 전환</li>
+              <li>[📋 배지 기준 보기] 클릭 시 배지 등급 기준표 팝업 표시 — B.6 역량인증제관리 [기준 안내] 팝업(PAGE 2)과 동일 데이터·컴포넌트 재사용, 읽기 전용</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">4</span> 배지 선택(동점)</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>최고 점수 영역이 2개 이상(동점)인 경우 학생이 희망 영역을 선택하는 UI 노출(제7조③)</li>
+              <li class="em">선택 완료 전까지는 배지 미확정 상태로 유지</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">5</span> 이수 현황 요약</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>내 역량점수(총점) · 다면적역량(창의/공감/글로벌) 개별 점수 · 이수 프로그램 건수 표시</li>
+              <li>디지털 배지와 2단 배치</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">6</span> 년도별 이수내역</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>이수년도 · 프로그램명 · 영역 · 이수일자 · 취득 역량점수 표시</li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bottom-3">
+
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>A.5 (PAGE 1)</td></tr>
+          <tr><th>화면명</th><td>디지털 배지 · 역량점수 현황</td></tr>
+          <tr><th>메뉴 경로</th><td>역량개발 &gt; 역량 인증제 &gt; 디지털 배지 · 역량점수 현황</td></tr>
+          <tr><th>유형</th><td>조회 · 현황형</td></tr>
+          <tr><th>사용자</th><td>학생</td></tr>
+          <tr><th>목적</th><td>학생 본인의 역량점수 · 디지털 배지 · 이수내역 확인</td></tr>
+          <tr><th>연계</th><td>B.6 역량인증제관리(관리자) — 배지 등급 기준표(제7조) 및 [기준 안내] 팝업 데이터 공유 · A.5 PAGE 2 인증서 출력</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>배지 등급 자동 산정</b>총점 기준 실버(15점↑)/골드(30점↑) 2등급 자동 부여(제7조①)</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>배지 영역 자동 산정</b>창의·공감·글로벌 중 최고 득점 영역 기준 부여(제7조②)</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>동점 시 영역 선택</b>최고 점수 영역이 2개 이상이면 학생이 직접 배지 영역 선택(제7조③)</div></div>
+        <div class="stepline"><span class="tag ph-4">S4</span><div class="tx"><b>인증서 출력 연동</b>[🖨 인증서 출력] 클릭 시 PAGE 2로 이동, 인쇄·PDF 저장 지원</div></div>
+        <div class="stepline"><span class="tag ph-5">S5</span><div class="tx"><b>다음 등급까지 남은 점수 안내</b>실버·골드 등급별 진행률·잔여 점수를 표시, 기준 충족 시 달성 완료 표기(신규 반영)</div></div>
+        <div class="stepline"><span class="tag ph-1">S6</span><div class="tx"><b>배지 기준 팝업 재사용</b>[📋 배지 기준 보기] 클릭 시 B.6 역량인증제관리 [기준 안내] 팝업과 동일 기준표를 학생 화면에서도 확인 가능(읽기 전용, 신규 반영)</div></div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">배지 등급은 총점 기준(실버 15점↑ / 골드 30점↑), 배지 영역은 최고 득점 영역 기준으로 자동 부여(제7조①②).</div>
+        <div class="exc-box">최고 득점 영역이 동점인 경우 학생이 직접 선택해야 하며(제7조③), 선택 완료 전까지 배지는 미확정 상태로 유지.</div>
+        <div class="std-box">다음 등급까지 남은 점수는 전체 누적 역량점수(3영역 합산) 기준으로 산정 — 배지 등급 기준(제7조①)과 동일 산식. 기준표는 B.6 [기준 안내] 팝업 데이터를 그대로 재사용해 관리자·학생 화면 간 불일치가 없도록 한다.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== PAGE 2 : 인증서 출력 화면 ===================== -->
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb">
+      <span class="page-num strong">화면 A.5</span>
+    </div>
+    <div>
+      <div class="page-title">인증서 출력</div>
+      <div class="page-desc">PAGE 1에서 [🖨 인증서 출력] 클릭 시 진입하는 인증서 출력 화면. 디지털 배지 이미지와 학생 정보를 담아 인쇄·PDF로 저장할 수 있다.</div>
+    </div>
+    <span class="page-num page-right">PAGE 2</span>
+  </div>
+
+  <div class="layout">
+
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 인증서 상단</div>
+        <div class="grp-body">
+          <div class="cert-wrap">
+            <div class="cert-card">
+              <div class="cert-org">순천향대학교 초·중·고 체험프로그램 다면적 역량 인증제</div>
+              <div class="cert-title">디지털 배지 인증서</div>
+              <div class="cert-medal"><span class="sch">SCH</span><span class="ic">💡</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 인증 정보</div>
+        <div class="grp-body">
+          <table class="cert-info" style="margin:0;">
+            <tr><td class="k">성명</td><td>이도현</td><td class="k">학교</td><td>순천향중학교</td></tr>
+            <tr><td class="k">학년</td><td>1학년</td><td class="k">아이디</td><td>dhlee05@sch.ac.kr</td></tr>
+            <tr><td class="k">다면적 역량</td><td>창의 (Creativity)</td><td class="k">배지 등급</td><td>실버 (SILVER)</td></tr>
+            <tr><td class="k">인증번호</td><td>SCH-2026-000142</td><td class="k">발급일자</td><td>2026-08-05</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 인증 문구 · 발급 직인</div>
+        <div class="grp-body">
+          <div class="cert-body-txt" style="margin-top:0;">
+            위 학생은 순천향대학교 다면적 역량 인증제 운영 기준(제7조)에 따라<br>
+            <b>창의(Creativity)</b> 영역에서 우수한 역량 점수를 취득하여 이 인증서를 수여합니다.
+          </div>
+          <div class="cert-foot">
+            <div>발급기관 &nbsp;순천향대학교<br>발급자 &nbsp;역량개발센터장</div>
+            <div class="cert-seal">순천향대<br>총장직인</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">4</span> 하단 액션</div>
+        <div class="grp-body">
+          <div class="cert-actions" style="margin-top:0;">
+            <button class="btn btn-outline btn-mini">닫기</button>
+            <button class="btn btn-primary btn-mini">🖨 인쇄</button>
+            <button class="btn btn-success btn-mini">PDF 다운로드</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 인증서 상단</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>발급기관명 · 인증서 제목 · 디지털 배지 이미지(취득 영역 아이콘) 표시</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 인증 정보</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>비고</th></tr>
+              <tr><td>성명 / 학교 / 학년 / 아이디</td><td>필수(요청)</td></tr>
+              <tr><td>다면적 역량명</td><td>필수(요청)</td></tr>
+              <tr><td>배지 등급</td><td class="em">추천 추가</td></tr>
+              <tr><td>인증번호 / 발급일자</td><td class="em">추천 추가</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li class="em">인증번호는 발급 시 자동 부여</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 인증 문구 · 발급 직인</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>역량 인증제 운영 기준(제7조) 근거 문구 + 취득 영역 명시</li>
+              <li class="em">발급기관·발급자 명의, 총장 직인(목업) — 추천 추가 항목</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">4</span> 하단 액션</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>인쇄 · PDF 다운로드 · 닫기(PAGE 1로 복귀)</li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bottom-3">
+
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>A.5 (PAGE 2)</td></tr>
+          <tr><th>화면명</th><td>인증서 출력</td></tr>
+          <tr><th>메뉴 경로</th><td>역량개발 &gt; 역량 인증제 &gt; 인증서 출력</td></tr>
+          <tr><th>유형</th><td>출력 · 팝업형</td></tr>
+          <tr><th>사용자</th><td>학생</td></tr>
+          <tr><th>목적</th><td>취득한 디지털 배지의 인증서를 인쇄 또는 PDF로 저장</td></tr>
+          <tr><th>연계</th><td>A.5 PAGE 1 디지털 배지 · 역량점수 현황</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>인증서 자동 구성</b>취득 배지·학생 정보 기준으로 인증서 내용 자동 채움</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>인증번호 자동 부여</b>발급 시 SCH-연도-일련번호 형식으로 자동 채번</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>인쇄 · PDF 저장</b>인쇄 및 PDF 다운로드 기능 제공</div></div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">인증서 필수 항목 : 배지 이미지 · 이름 · 학교 · 학년 · 아이디 · 다면적 역량명.</div>
+        <div class="exc-box"><b>배지 등급 · 인증번호 · 발급일자 · 인증 문구 · 발급기관/직인</b>은 근거 문서 미기재 [추천 추가] 항목 — 확인 필요.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM);
+    document.querySelectorAll('.doc').forEach(function(doc){
+        var total = doc.scrollHeight;
+        var n = Math.max(1, Math.ceil(total / pageH));
+        if(n < 2) return;
+        var layer = document.createElement("div");
+        layer.className = "page-break-guide"; layer.style.height = total + "px";
+        for(var i = 1; i < n; i++){
+            var l = document.createElement("div");
+            l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+            layer.appendChild(l);
+        }
+        doc.appendChild(layer);
+    });
+})();
+</script>
+
+</body>
+</html>

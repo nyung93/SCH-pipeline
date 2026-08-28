@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A.1 초·중·고 회원가입</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-num.page-right{ margin-left:auto; flex-shrink:0; align-self:center; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-cap .new{ background:#e8f0fe; color:#1a73e8; font-size:10px; padding:1px 8px; border-radius:8px; font-weight:700; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+.sub{ margin-bottom:11px; } .sub:last-child{ margin-bottom:0; }
+.sub-cap{ display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; color:#666; margin-bottom:6px; }
+.sub-cap .mark{ background:#eee; color:#888; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap; }
+.sub-cap .mark.spec{ background:#e8f0fe; color:#1a73e8; }
+.sub-cap .icon{ width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.sub-cap .tail{ margin-left:auto; font-size:10.5px; font-weight:500; color:#aaa; }
+
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+.rq{ margin-bottom:11px; } .rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px; display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq p{ font-size:11px; line-height:1.5; color:#333; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; } .rq li.em::before{ color:#c62828; }
+
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; } .rqt .c{ text-align:center; }
+.rqt .yes{ color:#c62828; font-weight:700; text-align:center; } .rqt .no{ color:#ccc; text-align:center; }
+.rqt.spec th:first-child{ width:66px; }
+
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; } .btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-success{ background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.btn-danger { background:#fce4ec; color:#c62828; border:1px solid #ef9a9a; }
+.btn-lg{ height:30px; padding:5px 18px; font-size:12px; } .btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+.btn[disabled]{ background:#f0f0f0; color:#bbb; border:1px solid #e0e0e0; cursor:not-allowed; }
+
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+textarea.mf-input{ height:auto; min-height:58px; width:100%; resize:vertical; line-height:1.6; }
+.charcnt{ text-align:right; font-size:10.5px; color:#aaa; margin-top:3px; }
+.upload{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:#aaa; }
+.help-txt{ font-size:10.5px; color:#888; line-height:1.4; } .req{ color:#c62828; margin-left:2px; } .w-full{ width:100%; }
+
+.seg{ display:inline-flex; border:1px solid #ddd; border-radius:4px; overflow:hidden; }
+.seg span{ padding:4px 14px; font-size:11px; color:#666; background:#fff; border-left:1px solid #eee; }
+.seg span:first-child{ border-left:none; } .seg span.on{ background:#1a73e8; color:#fff; font-weight:600; }
+.sw{ display:inline-flex; border:1px solid #ddd; border-radius:13px; overflow:hidden; font-size:11px; }
+.sw span{ padding:3px 13px; } .sw .on{ background:#e8f0fe; color:#1a73e8; font-weight:600; } .sw .off{ background:#fff; color:#bbb; }
+.check-group{ display:flex; gap:14px; flex-wrap:wrap; }
+.check-item{ display:inline-flex; align-items:center; gap:5px; font-size:11px; line-height:1.4; }
+.check-box{ width:14px; height:14px; border:1px solid #ccc; border-radius:3px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:9px; flex-shrink:0; color:#1a73e8; background:#fff; }
+.check-box.on{ background:#e8f0fe; border-color:#90caf9; }
+
+.cg{ display:grid; grid-template-columns:78px 1fr 78px 1fr 78px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg.form{ grid-template-columns:124px 1fr; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .vl.col{ display:block; }
+.cg:not(.form) .lb:nth-last-child(-n+6), .cg:not(.form) .vl:nth-last-child(-n+6){ border-bottom:none; }
+.cg.form .lb:nth-last-child(2), .cg.form .vl:last-child{ border-bottom:none; }
+.cg.form .lb{ white-space:normal; } .cg.common .vl{ background:#fafafa; }
+
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+.cha{ width:100%; border-collapse:collapse; font-size:10.5px; margin-top:8px; }
+.cha th{ background:#f8f8f8; padding:5px 6px; border:1px solid #eee; color:#555; font-weight:600; }
+.cha td{ padding:5px 6px; border:1px solid #eee; text-align:center; }
+
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec;
+  border-radius:5px; margin-top:5px; line-height:1.5; } .exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe;
+  border-radius:5px; margin-top:5px; line-height:1.5; } .std-box:first-child{ margin-top:0; }
+
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px;
+  border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; } .ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; } .ph-4{ background:#e8f5e9; color:#2e7d32; } .ph-5{ background:#fce4ec; color:#c2185b; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; } .stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+</style>
+</head>
+<body>
+<div class="doc">
+  <div class="page-header">
+    <div class="page-crumb"><span class="page-num strong">화면 A.1</span></div>
+    <div><div class="page-title">초·중·고 회원가입</div><div class="page-desc">초·중·고 체험 프로그램 참여 학생 전용 회원가입 화면. 회의록(2026-07-30) 반영 — 휴대전화·생년월일 삭제, 학교/학년/반/번호 필수.</div></div>
+    <span class="page-num page-right">PAGE 1</span>
+  </div>
+  <div class="layout">
+    <div class="col-screen">
+
+      <!-- 1. 계정 정보 -->
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 계정 정보</div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">아이디<span class="req">*</span></div>
+            <div class="vl col">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input class="mf-input" style="width:120px;" placeholder="아이디 입력">
+                <span>@</span>
+                <input class="mf-input" style="width:140px;" placeholder="주소 입력">
+                <button class="btn btn-outline btn-mini">중복확인</button>
+              </div>
+              <div class="help-txt" style="margin-top:4px;">아이디는 이메일 주소로 사용합니다.</div>
+            </div>
+            <div class="lb">비밀번호<span class="req">*</span></div>
+            <div class="vl col">
+              <input class="mf-input w-full" type="password" placeholder="비밀번호 입력">
+              <div class="help-txt" style="margin-top:4px;">영대문자·소문자·숫자·특수문자 중 2종 이상 조합, 10자 이상</div>
+            </div>
+            <div class="lb">비밀번호 확인<span class="req">*</span></div>
+            <div class="vl"><input class="mf-input w-full" type="password" placeholder="비밀번호 확인 입력"></div>
+          </div>
+          <div class="std-box" style="margin-top:9px;">안내 : 부모님 이메일로 가입하는 경우, 인증메일 및 디지털 배지 확인이 어려울 수 있습니다.</div>
+        </div>
+      </div>
+
+      <!-- 2. 개인 정보 -->
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 개인 정보</div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">이름<span class="req">*</span></div>
+            <div class="vl"><input class="mf-input w-full" placeholder="이름 입력"></div>
+            <div class="lb">회원구분<span class="req">*</span></div>
+            <div class="vl"><span class="seg"><span class="on">초등학생</span><span>중학생</span><span>고등학생</span></span></div>
+            <div class="lb">성별</div>
+            <div class="vl col">
+              <span class="seg"><span class="on">남</span><span>여</span></span>
+              <div class="help-txt" style="margin-top:4px;">[가정] 근거 문서에 명시 없음 — 유지 여부 확인 필요</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. 학교 정보 -->
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 학교 정보</div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">학교<span class="req">*</span></div>
+            <div class="vl col">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input class="mf-input" style="flex:1;" placeholder="학교명 검색">
+                <button class="btn btn-outline btn-mini">학교 검색</button>
+              </div>
+              <div class="help-txt" style="margin-top:4px;">소재지 기준 · 학교명/학교코드 데이터 활용</div>
+            </div>
+            <div class="lb">학년<span class="req">*</span></div>
+            <div class="vl">
+              <select class="filter-select">
+                <option>학년 선택</option>
+                <option>1학년</option><option>2학년</option><option>3학년</option>
+                <option>4학년</option><option>5학년</option><option>6학년</option>
+              </select>
+            </div>
+            <div class="lb">반 / 번호<span class="req">*</span></div>
+            <div class="vl">
+              <input class="mf-input" style="width:70px;" placeholder="반">
+              <span>반</span>
+              <input class="mf-input" style="width:70px;" placeholder="번호">
+              <span>번</span>
+            </div>
+            <div class="lb">학교주소</div>
+            <div class="vl col">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <select class="filter-select"><option>시/도 선택</option></select>
+                <select class="filter-select"><option>구/군 선택</option></select>
+              </div>
+              <div class="help-txt" style="margin-top:4px;">[가정] 근거 문서에 명시 없음 — 유지 여부 확인 필요</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 약관 동의 · 스팸방지 -->
+      <div class="grp">
+        <div class="grp-cap"><span class="num">4</span> 약관 동의 · 스팸방지</div>
+        <div class="grp-body">
+          <div class="cg form">
+            <div class="lb">개인정보 동의<span class="req">*</span></div>
+            <div class="vl">
+              <div class="check-group">
+                <span class="check-item"><span class="check-box on">✓</span> 개인정보 수집·이용에 동의합니다.</span>
+              </div>
+            </div>
+            <div class="lb">스팸방지<span class="req">*</span></div>
+            <div class="vl">
+              <div class="check-group">
+                <span class="check-item"><span class="check-box">✓</span> reCAPTCHA · 로봇이 아닙니다</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. 가입 액션 -->
+      <div class="grp">
+        <div class="grp-cap"><span class="num">5</span> 가입 액션</div>
+        <div class="grp-body">
+          <div class="help-txt" style="text-align:center;margin-bottom:8px;">유효성 검증 통과 시 계정 생성</div>
+          <div style="display:flex;justify-content:center;gap:8px;">
+            <button class="btn btn-outline btn-lg">취소</button>
+            <button class="btn btn-primary btn-lg">가입하기</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 계정 정보</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>아이디는 아이디 @ 주소 형태로 분리 입력, 중복확인 필수</li>
+              <li>비밀번호 : 2종 이상 조합 10자 이상</li>
+              <li class="em">부모 이메일 가입 시 인증메일·배지 확인 제약 안내 문구 노출</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 개인 정보</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>이름 필수</li>
+              <li>회원구분 : 초등학생 / 중학생 / 고등학생</li>
+              <li class="em">성별은 [가정] 항목 — 확인 필요</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 학교 정보</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>학교 : 소재지 기준 검색, 학교코드 데이터 활용</li>
+              <li>학년 · 반 · 번호 필수</li>
+              <li>학교주소 : 시/도 · 구/군 선택 (기존 주소 항목을 이관·개명)</li>
+              <li class="em">매년 3/1 이후 최초 로그인 시 학년/반/학교 학생 직접 수정</li>
+              <li class="em">학교주소 근거 문서 미기재 — 유지 여부 확인 필요</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">4</span> 약관 · 스팸방지</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>개인정보 수집·이용 동의 필수</li>
+              <li>reCAPTCHA 스팸방지</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">5</span> 가입 완료</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>유효성 검증 후 계정 생성</li>
+              <li class="em">삭제 항목 : 휴대전화번호 · 생년월일</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-3">
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>A.1</td></tr>
+          <tr><th>화면명</th><td>초·중·고 회원가입</td></tr>
+          <tr><th>메뉴 경로</th><td>회원관리 &gt; 회원가입 &gt; 초·중·고 회원가입</td></tr>
+          <tr><th>유형</th><td>입력 · 폼형</td></tr>
+          <tr><th>사용자</th><td>학생</td></tr>
+          <tr><th>목적</th><td>초·중·고 학생 대상 회원가입 정보 입력 및 계정 생성</td></tr>
+          <tr><th>연계</th><td>C.1 통합 로그인</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline">
+          <span class="tag ph-1">S1</span>
+          <div class="tx"><b>아이디 분리 입력</b>아이디 @ 주소 형태로 나눠 입력, 중복확인 필수</div>
+        </div>
+        <div class="stepline">
+          <span class="tag ph-2">S2</span>
+          <div class="tx"><b>부모 이메일 가입 제약</b>부모님 이메일 가입 시 인증메일·디지털 배지 확인 어려움 안내 문구 노출</div>
+        </div>
+        <div class="stepline">
+          <span class="tag ph-3">S3</span>
+          <div class="tx"><b>학기 초 학적 직접 수정</b>매년 3/1 이후 최초 로그인 시 학년/반/학교 학생 직접 수정</div>
+        </div>
+        <div class="stepline">
+          <span class="tag ph-4">S4</span>
+          <div class="tx"><b>삭제 항목 반영</b>기존 화면 대비 휴대전화번호·생년월일 항목 삭제</div>
+        </div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">학교급은 초등학생 / 중학생 / 고등학생 3단계로 구분하며, 재학·휴학 등 별도 학적 상태는 사용하지 않음</div>
+        <div class="exc-box">성별 항목은 [가정] — 근거 문서에 명시 없어 유지 여부 확인 필요</div>
+        <div class="exc-box">학교주소(시/도·구/군) 항목은 [가정] — 근거 문서 미기재, 유지 여부 확인 필요</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector(".doc");
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM), total = doc.scrollHeight;
+    var n = Math.max(1, Math.ceil(total / pageH));
+    if(n < 2) return;
+    var layer = document.createElement("div");
+    layer.className = "page-break-guide"; layer.style.height = total + "px";
+    for(var i = 1; i < n; i++){
+        var l = document.createElement("div");
+        l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+        layer.appendChild(l);
+    }
+    doc.appendChild(layer);
+})();
+</script>
+</body>
+</html>

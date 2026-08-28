@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>A.2 프로그램 지원자 관리</title>
+<style>
+:root{
+  --blue:#3899ca; --navy:#5b80bd; --sky:#60bddb; --green:#269e77;
+  --bg:#f4f6f6; --text:#26364f; --sub:#4a576c; --bd:#bdc1c9; --bd2:#e6e8eb; --red:#e50048;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Malgun Gothic','맑은 고딕',sans-serif;}
+body{background:#e9edf0;color:var(--text);font-size:11.5px;padding:14px;}
+.doc{width:297mm;margin:0 auto;position:relative;background:#fff;box-shadow:0 0 0 1px #d5d9dd;}
+
+.path-bar{display:flex;border:1px solid var(--bd);margin-bottom:8px;}
+.pb-label{background:var(--bg);padding:7px 15px;text-align:center;font-size:11.5px;border-right:1px solid var(--bd);flex-shrink:0;}
+.pb-value{padding:7px 14px;font-size:11.5px;display:flex;align-items:center;gap:8px;}
+.pb-value.grow{flex:1;} .pb-value .sep{color:#9aa3ae;font-size:11px;}
+.pb-right{display:flex;border-left:1px solid var(--bd);}
+.pb-right .pb-label{width:90px;} .pb-right .pb-value{width:120px;font-weight:bold;color:var(--navy);}
+
+.doc-body{display:flex;border:1px solid var(--bd);}
+.screen-area{flex:74;border-right:1px solid var(--bd);padding:9px 28px 16px 34px;position:relative;}
+.define-panel{flex:26;}
+.page-title-row{display:flex;align-items:center;gap:7px;padding:11px 2px 9px;}
+.page-title{font-size:16px;font-weight:bold;}
+.page-title .pid{font-size:11px;color:var(--sub);background:var(--bg);padding:2px 8px;border-radius:3px;font-weight:normal;}
+
+.badge{position:absolute;left:-12px;width:21px;height:21px;border-radius:50%;background:var(--red);color:#fff;
+       font-size:11px;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:5;box-shadow:0 0 0 2px #fff;}
+.badge.right{left:auto;right:-8px;} .badge.nested{left:-26px;}
+
+.btn{border:none;border-radius:2px;font-size:11px;cursor:pointer;padding:5px 11px;color:#fff;display:inline-flex;align-items:center;gap:4px;}
+.btn-navy{background:var(--navy);} .btn-sky{background:var(--sky);} .btn-green{background:var(--green);}
+.btn-grey{background:#fff;color:var(--sub);border:1px solid var(--bd);}
+.btn-red{background:#fdeef3;color:var(--red);border:1px solid #f7c6d6;}
+.btn-mini{padding:3px 8px;font-size:10.5px;}
+.ro{background:#f7f8f9;color:var(--sub);}
+
+.filter-common{background:var(--bg);border:1px solid var(--bd2);padding:10px 14px;position:relative;}
+.filter-special{background:#fff;border:1px solid var(--bd2);border-top:none;padding:10px 14px;position:relative;}
+.ftable{width:100%;border-collapse:collapse;}
+.ftable td{padding:4px 0;vertical-align:middle;}
+.ftable td.lb{width:74px;font-size:11px;padding-right:6px;white-space:nowrap;}
+.ftable td.ct{padding-right:18px;width:24%;white-space:nowrap;}
+select,input[type=text],input[type=date],input[type=number],
+.filter-select,.mf-input{border:1px solid var(--bd);border-radius:2px;padding:3px 6px;font-size:11px;height:26px;background:#fff;color:var(--text);}
+.w-full{width:100%;} .w-half{width:calc(50% - 7px);}
+.search-act{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid var(--bd2);position:relative;}
+
+/* 행 액션 버튼 */
+.row-act{display:inline-flex;gap:4px;}
+
+/* 집계 카드 */
+.stat-cards{display:flex;gap:8px;margin:14px 0 10px;position:relative;}
+.stat-card{flex:1;background:var(--bg);border-radius:5px;padding:8px 10px;text-align:center;}
+.stat-card .l{font-size:10px;color:#7c8896;}
+.stat-card .v{font-size:18px;font-weight:bold;margin-top:2px;line-height:1.1;}
+
+.batch{display:flex;align-items:center;gap:5px;margin-bottom:9px;position:relative;flex-wrap:wrap;}
+.batch .pfx{color:var(--green);font-size:11px;margin-right:6px;}
+.batch .sp{margin-left:auto;}
+
+.grid-wrap{position:relative;}
+.grid{width:100%;border-collapse:collapse;font-size:11px;border-top:2px solid var(--blue);}
+.grid th{background:var(--bg);color:var(--sub);font-weight:normal;padding:7px 6px;border-bottom:1px solid var(--bd2);text-align:center;}
+.grid th.sortable::after{content:' ↕';color:#a9b1ba;font-size:9px;}
+.grid td{padding:6px;text-align:center;border-bottom:1px solid #eef0f1;}
+.grid td.link{color:var(--blue);text-decoration:underline;cursor:pointer;}
+.grid .off{opacity:.5;text-decoration:line-through;}
+.tag{padding:1px 7px;border-radius:3px;font-size:10px;font-weight:bold;white-space:nowrap;}
+.t-done{background:#e8f5e9;color:#2e7d32;} .t-wait{background:#fff3e0;color:#e65100;} .t-canc{background:#fce4ec;color:#c62828;}
+.no-mail{color:var(--red);font-size:10px;}
+
+.bottom{display:flex;align-items:center;margin-top:12px;position:relative;}
+.pagination{display:flex;list-style:none;gap:2px;position:absolute;left:0;right:0;justify-content:center;}
+.pagination a{display:block;padding:4px 9px;border:1px solid var(--bd);background:#fff;color:var(--sub);text-decoration:none;font-size:11px;border-radius:2px;}
+.pagination li.active a{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+.dp-head{background:var(--bg);text-align:center;padding:8px;font-size:12.5px;font-weight:bold;border-bottom:1px solid var(--bd);}
+.dp-intro{padding:9px 11px;font-size:11px;line-height:1.5;border-bottom:1px solid var(--bd);}
+.dp-row{display:flex;border-bottom:1px solid var(--bd);}
+.dp-row:last-child{border-bottom:none;}
+.dp-num{width:38px;flex-shrink:0;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;border-right:1px solid var(--bd);}
+.dp-cont{flex:1;padding:8px 10px;}
+.dp-title{font-size:11.5px;font-weight:bold;margin-bottom:3px;}
+.dp-cont ul{list-style:none;}
+.dp-cont li{font-size:10.5px;line-height:1.42;padding-left:10px;position:relative;margin-bottom:1px;}
+.dp-cont li::before{content:'•';position:absolute;left:0;color:var(--sub);}
+.em{color:var(--red);}
+
+@page{ size:A4 landscape; margin:8mm; }
+@media print{ body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="path-bar">
+    <div class="pb-label">페이지 경로</div>
+    <div class="pb-value grow">비교과 프로그램 <span class="sep">›</span> 프로그램 지원자 관리 <span class="sep">›</span> AI 인공지능 기초 코딩 워크숍</div>
+    <div class="pb-right"><div class="pb-label">페이지</div><div class="pb-value">PAGE 1</div></div>
+  </div>
+
+  <div class="doc-body">
+    <div class="screen-area">
+      <div class="page-title-row"><span class="page-title">AI 인공지능 기초 코딩 워크숍</span> <span class="pid">지원자 관리</span></div>
+
+      <!-- 공통 검색 (초중고 대체) -->
+      <div class="filter-common">
+        <div class="badge" style="top:11px;">1</div>
+        <table class="ftable">
+          <tr>
+            <td class="lb">학교급</td>
+            <td class="ct"><select class="filter-select w-full"><option>초등학교</option><option>중학교</option><option>고등학교</option></select></td>
+            <td class="lb">학교</td>
+            <td class="ct"><input type="text" class="mf-input w-full" placeholder="학교명"></td>
+            <td class="lb">학년</td>
+            <td class="ct"><select class="filter-select w-full"><option>학년</option></select></td>
+          </tr>
+          <tr>
+            <td class="lb">반 / 번호</td>
+            <td class="ct"><input type="number" class="mf-input w-half"> <input type="number" class="mf-input w-half"></td>
+            <td class="lb">이름 / 아이디</td>
+            <td class="ct"><input type="text" class="mf-input w-full" placeholder="검색어 입력"></td>
+            <td class="lb">이메일 등록</td>
+            <td class="ct"><select class="filter-select w-full"><option>전체</option><option>등록</option><option>미등록</option></select></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- 특화 검색 -->
+      <div class="filter-special">
+        <div class="badge" style="top:11px;">2</div>
+        <table class="ftable">
+          <tr>
+            <td class="lb">프로그램</td>
+            <td class="ct"><input type="text" class="mf-input ro w-full" value="AI 인공지능 기초 코딩 워크숍" readonly></td>
+            <td class="lb">차수</td>
+            <td class="ct"><select class="filter-select w-full"><option>전체 차수</option></select></td>
+            <td class="lb">상태</td>
+            <td class="ct"><select class="filter-select w-full"><option>전체</option><option>신청</option><option>수료</option><option>취소</option><option>불참</option></select></td>
+          </tr>
+          <tr>
+            <td class="lb">신청일</td>
+            <td class="ct"><input type="date" class="mf-input w-half"> ~ <input type="date" class="mf-input w-half"></td>
+            <td class="lb">운영부서</td>
+            <td class="ct"><select class="filter-select w-full"><option>전체</option></select></td>
+            <td class="lb"></td><td class="ct"></td>
+          </tr>
+        </table>
+        <div class="search-act">
+          <div class="badge nested" style="top:11px;">3</div>
+          <button class="btn btn-grey">↻ 새로고침</button>
+          <button class="btn btn-navy">🔍 조회</button>
+        </div>
+      </div>
+
+      <!-- 상태 집계 카드 -->
+      <div class="stat-cards">
+        <div class="badge" style="top:-8px;">4</div>
+        <div class="stat-card"><div class="l">전체</div><div class="v">28</div></div>
+        <div class="stat-card"><div class="l">신청</div><div class="v" style="color:var(--navy)">27</div></div>
+        <div class="stat-card"><div class="l">대기</div><div class="v">0</div></div>
+        <div class="stat-card"><div class="l">참여</div><div class="v">0</div></div>
+        <div class="stat-card"><div class="l">수료</div><div class="v" style="color:#2e7d32">0</div></div>
+        <div class="stat-card"><div class="l">취소</div><div class="v" style="color:#c62828">1</div></div>
+        <div class="stat-card"><div class="l">불참</div><div class="v" style="color:#7c8896">0</div></div>
+      </div>
+
+      <!-- 일괄 제어 -->
+      <div class="batch">
+        <div class="badge" style="top:-2px;">5</div>
+        <span class="pfx">✓ 선택된 0명에 대해서</span>
+        <button class="btn btn-navy btn-mini">수료 처리</button>
+        <button class="btn btn-navy btn-mini">상태 변경</button>
+        <button class="btn btn-navy btn-mini">그룹 설정</button>
+        <span class="sp"></span>
+        <button class="btn btn-grey btn-mini">＋ 지원자 추가</button>
+        <button class="btn btn-green btn-mini">엑셀 일괄등록</button>
+      </div>
+
+      <!-- 그리드 -->
+      <div class="grid-wrap">
+        <div class="badge" style="top:9px;">6</div>
+        <table class="grid">
+          <thead>
+            <tr>
+              <th style="width:34px;"><input type="checkbox"></th>
+              <th class="sortable">이름</th>
+              <th>아이디(이메일)</th>
+              <th>학교</th>
+              <th class="sortable">학년</th>
+              <th>반/번호</th>
+              <th>차수</th>
+              <th class="sortable">신청일</th>
+              <th>상태</th>
+              <th style="width:120px;">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td>김서준</td><td>seojun@abc.kr</td><td>순천향초</td><td>5</td><td>3-12</td>
+              <td>1차</td><td>2026-07-09</td>
+              <td><span class="tag t-wait">신청</span></td>
+              <td>
+                <div class="badge right" style="top:-11px;">7</div>
+                <div class="row-act"><button class="btn btn-grey btn-mini">취소</button>
+                <button class="btn btn-navy btn-mini">상세</button></div>
+              </td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td>이하은</td><td class="no-mail">미등록</td><td>순천향중</td><td>2</td><td>1-07</td>
+              <td>1차</td><td>2026-07-08</td>
+              <td><span class="tag t-wait">신청</span></td>
+              <td>
+                <div class="row-act"><button class="btn btn-grey btn-mini">취소</button>
+                <button class="btn btn-navy btn-mini">상세</button></div>
+              </td>
+            </tr>
+            <tr class="off">
+              <td><input type="checkbox"></td>
+              <td>박도윤</td><td>doyun@abc.kr</td><td>순천향고</td><td>1</td><td>4-21</td>
+              <td>2차</td><td>2026-07-05</td>
+              <td><span class="tag t-canc">취소</span></td>
+              <td>
+                <div class="row-act"><button class="btn btn-grey btn-mini">복원</button>
+                <button class="btn btn-navy btn-mini">상세</button></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 하단 유틸 -->
+      <div class="bottom">
+        <div class="badge" style="top:2px;">8</div>
+        <button class="btn btn-green">Excel 다운로드</button>
+        <ul class="pagination">
+          <li><a href="#">&lt;</a></li>
+          <li class="active"><a href="#">1</a></li>
+          <li><a href="#">2</a></li>
+          <li><a href="#">3</a></li>
+          <li><a href="#">&gt;</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 우 : 화면 정의 -->
+    <div class="define-panel">
+      <div class="dp-head">화면 정의</div>
+      <div class="dp-intro">
+        <b>프로그램 리스트</b>에서 특정 프로그램 진입 시 접근하는, 해당 프로그램 1건의 지원자만 조회·관리하는 화면.
+        타이틀은 진입한 프로그램명으로 고정 표시. <b>회의록(2026-07-30)</b> 반영 —
+        전체 신청 인원 조회, 수료 처리 시 수료증 자동 발급, <b>SMS 발송 미반영</b>.
+      </div>
+
+      <div class="dp-row"><div class="dp-num">1</div><div class="dp-cont">
+        <div class="dp-title">공통 검색 (초·중·고)</div>
+        <ul>
+          <li>학교급 · 학교 · 학년 · 반/번호 · 이름/아이디</li>
+          <li>이메일 등록 여부 필터</li>
+          <li class="em">대학 학적필터(재학/휴학) 대신 초중고 기준으로 대체 — 회의록 우선</li>
+        </ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">2</div><div class="dp-cont">
+        <div class="dp-title">특화 검색</div>
+        <ul>
+          <li>차수 · 상태 · 신청일 · 운영부서</li>
+          <li class="em">프로그램 필드는 리스트에서 선택 후 진입하므로 읽기전용 표시로 고정</li>
+        </ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">3</div><div class="dp-cont">
+        <div class="dp-title">검색 액션</div>
+        <ul><li>새로고침 · 조회</li></ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">4</div><div class="dp-cont">
+        <div class="dp-title">상태 집계</div>
+        <ul><li>전체 · 신청 · 대기 · 참여 · 수료 · 취소 · 불참 (7항목) 인원 집계</li>
+        <li>전체 신청 인원을 한눈에 조회</li>
+        <li class="em">A.5 프로그램 리스트의 지원 현황 컬럼과 동일한 7개 항목으로 반영</li></ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">5</div><div class="dp-cont">
+        <div class="dp-title">일괄 제어 · 등록</div>
+        <ul>
+          <li>선택 대상 수료 처리 · 상태 변경 · 그룹 설정</li>
+          <li>개별 지원자 수동 추가</li>
+          <li>단체 신청 엑셀 일괄등록(이메일 필수값)</li>
+          <li class="em">핸드폰 미수집 → SMS 알림 발송 기능 미반영</li>
+        </ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">6</div><div class="dp-cont">
+        <div class="dp-title">지원자 목록</div>
+        <ul>
+          <li>선두필드 : 이름 · 아이디 · 학교 · 학년 · 반/번호</li>
+          <li>차수 · 신청일 · 상태 표시</li>
+          <li class="em">이메일 미등록 학생은 인증·배지·수료증 발급 불가 (목록에 표시)</li>
+        </ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">7</div><div class="dp-cont">
+        <div class="dp-title">행 관리</div>
+        <ul><li>취소 · 상세 · 복원</li>
+        <li class="em">수료 처리 시 수료증 자동 발급</li></ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">8</div><div class="dp-cont">
+        <div class="dp-title">하단 유틸</div>
+        <ul><li>Excel 다운로드 좌측 · 페이징 중앙</li></ul></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector('.doc');
+    function mmToPx(mm){var p=document.createElement('div');p.style.cssText='position:absolute;visibility:hidden;height:'+mm+'mm;width:0;';document.body.appendChild(p);var px=p.getBoundingClientRect().height;document.body.removeChild(p);return px;}
+    var pageH=mmToPx(PAGE_H_MM-PRINT_MARGIN_MM),total=doc.scrollHeight;
+    var n=Math.max(1,Math.ceil(total/pageH));
+    if(n<2)return;
+    var layer=document.createElement('div');layer.className='page-break-guide';layer.style.height=total+'px';
+    for(var i=1;i<n;i++){var l=document.createElement('div');l.className='pbg-line';l.style.top=(pageH*i)+'px';layer.appendChild(l);}
+    doc.appendChild(layer);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프로그램 지원자 관리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+/* A4 가로(297mm) 인쇄 전용 고정폭 */
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+/* 페이지 헤더 : 회색 캡 */
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-num.on{ background:#1a73e8; color:#fff; }
+.page-num.page-right{ margin-left:auto; flex-shrink:0; align-self:center; }
+.crumb-sep{ color:#bbb; font-size:12px; font-weight:700; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-title .cur{ font-size:12px; font-weight:700; color:#1a73e8; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+/* 2단 레이아웃 */
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+/* 캡 그룹 */
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-cap .new{ background:#e8f0fe; color:#1a73e8; font-size:10px; padding:1px 8px; border-radius:8px; font-weight:700; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+/* 그룹 내 하위 구분 */
+.sub{ margin-bottom:11px; }
+.sub:last-child{ margin-bottom:0; }
+.sub-cap{ display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; color:#666; margin-bottom:6px; }
+.sub-cap .mark{ background:#eee; color:#888; font-size:10.5px; font-weight:700;
+  padding:2px 8px; border-radius:4px; white-space:nowrap; }
+.sub-cap .mark.spec{ background:#e8f0fe; color:#1a73e8; }
+.sub-cap .icon{ width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.sub-cap .tail{ margin-left:auto; font-size:10.5px; font-weight:500; color:#aaa; }
+
+/* 우측 정의 프레임 */
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+/* 요구사항 블록 */
+.rq{ margin-bottom:11px; }
+.rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px;
+  display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq p{ font-size:11px; line-height:1.5; color:#333; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; }
+.rq li.em::before{ color:#c62828; }
+
+/* 요구사항 표 */
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; }
+.rqt .c{ text-align:center; }
+.rqt .yes{ color:#c62828; font-weight:700; text-align:center; }
+.rqt .no{ color:#ccc; text-align:center; }
+.rqt.spec th:first-child{ width:66px; }
+
+/* 버튼 */
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; }
+.btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-success{ background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.btn-danger { background:#fce4ec; color:#c62828; border:1px solid #ef9a9a; }
+.btn-lg{ height:30px; padding:5px 18px; font-size:12px; }
+.btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+.btn[disabled]{ background:#f0f0f0; color:#bbb; border:1px solid #e0e0e0; cursor:not-allowed; }
+
+/* 폼 요소 */
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input.ro{ background:#f0f0f0; color:#666; }
+.help-txt{ font-size:10.5px; color:#888; line-height:1.4; }
+.req{ color:#c62828; margin-left:2px; }
+.w-full{ width:100%; } .w-half{ width:calc(50% - 4px); }
+
+/* 세그먼트 / 체크 */
+.check-group{ display:flex; gap:14px; flex-wrap:wrap; }
+.check-item{ display:inline-flex; align-items:center; gap:5px; font-size:11px; line-height:1.4; }
+.check-box{ width:14px; height:14px; border:1px solid #ccc; border-radius:3px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:9px; flex-shrink:0; color:#1a73e8; background:#fff; }
+.check-box.on{ background:#e8f0fe; border-color:#90caf9; }
+
+/* 라벨-값 그리드 : 기본 3쌍/행(검색) · .form 은 2열(입력폼) */
+.cg{ display:grid; grid-template-columns:78px 1fr 78px 1fr 78px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg.form{ grid-template-columns:124px 1fr; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .vl.col{ display:block; }
+.cg:not(.form) .lb:nth-last-child(-n+6), .cg:not(.form) .vl:nth-last-child(-n+6){ border-bottom:none; }
+.cg.form .lb:nth-last-child(2), .cg.form .vl:last-child{ border-bottom:none; }
+.cg.form .lb{ white-space:normal; }
+.cg.common .vl{ background:#fafafa; }
+
+/* 검색 액션 */
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+
+/* 규칙 박스 */
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec;
+  border-radius:5px; margin-top:5px; line-height:1.5; }
+.exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe;
+  border-radius:5px; margin-top:5px; line-height:1.5; }
+.std-box:first-child{ margin-top:0; }
+
+/* 특화 기능 요약 */
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px;
+  border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; }
+.ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; }
+.ph-4{ background:#e8f5e9; color:#2e7d32; }
+.ph-5{ background:#fce4ec; color:#c2185b; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; }
+.stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+
+/* 집계 카드 (B.5 stat-cards 재사용 + 6열 변형, 2026-09-02 기존 7열에서 대기 삭제) */
+.stat-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:11px; }
+.stat-cards.c6{ grid-template-columns:repeat(6,1fr); }
+.stat-card{ background:#f8f8f8; border-radius:6px; padding:9px 8px; text-align:center; }
+.stat-card .label{ font-size:10.5px; color:#888; line-height:1.4; }
+.stat-card .val{ font-size:18px; font-weight:700; margin-top:3px; line-height:1.2; }
+
+/* 데이터 그리드 (지원자 목록) */
+.grid-wrap{ position:relative; }
+.grid{ width:100%; border-collapse:collapse; font-size:10.5px; border-top:2px solid #1a73e8; }
+.grid th{ background:#f8f8f8; color:#555; font-weight:600; padding:6px 5px; border-bottom:1px solid #e0e0e0; text-align:center; white-space:nowrap; line-height:1.4; }
+.grid th.sortable::after{ content:' ↕'; color:#aaa; font-size:9px; }
+.grid td{ padding:6px 5px; text-align:center; border-bottom:1px solid #eee; line-height:1.4; }
+.grid td.link{ color:#1a73e8; text-decoration:underline; cursor:pointer; }
+.grid tr.off{ opacity:.55; }
+.grid tr.off td{ text-decoration:line-through; }
+.tag.t-done{ background:#e8f5e9; color:#2e7d32; } .tag.t-wait{ background:#fff3e0; color:#e65100; } .tag.t-canc{ background:#fce4ec; color:#c62828; }
+.tag.t-part{ background:#e8f0fe; color:#1a73e8; } .tag.t-hold{ background:#f1f1f1; color:#666; } .tag.t-none{ background:#eceff2; color:#888; }
+.tag.t-rej{ background:#fdecea; color:#d84315; }
+.tag{ padding:1px 7px; border-radius:3px; font-size:9.5px; font-weight:700; white-space:nowrap; }
+.no-mail{ color:#c62828; font-size:10px; font-weight:600; }
+.row-act{ display:inline-flex; gap:4px; flex-wrap:wrap; justify-content:center; }
+.satis{ font-size:10.5px; }
+.satis.done{ color:#2e7d32; font-weight:600; } .satis.wait{ color:#999; }
+.dropzone{ border:1.5px dashed #90caf9; border-radius:8px; background:#f8fbff; padding:18px; text-align:center; }
+.dropzone .ic{ font-size:22px; margin-bottom:6px; }
+.dropzone .t{ font-size:11.5px; font-weight:700; color:#1a73e8; margin-bottom:3px; }
+.dropzone .s{ font-size:10.5px; color:#888; }
+.cha{ width:100%; border-collapse:collapse; font-size:10.5px; margin-top:8px; }
+.cha th{ background:#f8f8f8; padding:5px 6px; border:1px solid #eee; color:#555; font-weight:600; }
+.cha td{ padding:5px 6px; border:1px solid #eee; text-align:center; }
+
+/* 일괄 제어 바 */
+.batch{ display:flex; align-items:center; gap:6px; margin-bottom:9px; flex-wrap:wrap; }
+.batch .pfx{ color:#2e7d32; font-size:11px; font-weight:600; margin-right:4px; }
+.batch .sp{ margin-left:auto; }
+
+/* 하단 유틸 · 페이징 (B.5 bottom-bar/pager 재사용) */
+.bottom-bar{ position:relative; display:flex; align-items:center; margin-top:2px; }
+.pager{ position:absolute; left:0; right:0; display:flex; justify-content:center; gap:3px; list-style:none; }
+.pager a{ display:block; padding:4px 9px; border:1px solid #ddd; border-radius:4px;
+  background:#fff; color:#666; text-decoration:none; font-size:10.5px; line-height:1.4; }
+.pager li.on a{ background:#1a73e8; color:#fff; border-color:#1a73e8; }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb">
+      <span class="page-num strong">화면 B.4</span>
+    </div>
+    <div>
+      <div class="page-title">프로그램 지원자 관리 <span class="cur">— AI 인공지능 기초 코딩 워크숍</span></div>
+      <div class="page-desc">「비교과 프로그램 › 프로그램 지원자 관리」 경로로, <b>프로그램 리스트(B.2)</b>에서 특정 프로그램 진입 시 접근하는 해당 프로그램 1건의 지원자만 조회·관리하는 화면. 타이틀은 진입한 프로그램명으로 고정 표시. 회의록(2026-07-30) 반영 — 전체 신청 인원 조회, 수료 처리 시 수료증 자동 발급, <b>SMS 발송 미반영</b>.</div>
+    </div>
+    <span class="page-num page-right">PAGE 1</span>
+  </div>
+
+  <div class="layout">
+
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 공통 검색 <span class="tail">초·중·고 대체</span></div>
+        <div class="grp-body">
+          <div class="cg common">
+            <div class="lb">학교급</div>
+            <div class="vl"><select class="filter-select w-full"><option>초등학교</option><option>중학교</option><option>고등학교</option></select></div>
+            <div class="lb">학교</div>
+            <div class="vl"><input class="mf-input w-full" placeholder="학교명"></div>
+            <div class="lb">학년</div>
+            <div class="vl"><select class="filter-select w-full"><option>학년</option></select></div>
+
+            <div class="lb">반 / 번호</div>
+            <div class="vl"><input class="mf-input w-half" type="number"> <input class="mf-input w-half" type="number"></div>
+            <div class="lb">이름 / 아이디</div>
+            <div class="vl"><input class="mf-input w-full" placeholder="검색어 입력"></div>
+            <div class="lb">이메일 등록</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>등록</option><option>미등록</option></select></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 특화 검색</div>
+        <div class="grp-body">
+          <div class="cg">
+            <div class="lb">프로그램</div>
+            <div class="vl"><input class="mf-input ro w-full" value="AI 인공지능 기초 코딩 워크숍" readonly></div>
+            <div class="lb">차수</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체 차수</option></select></div>
+            <div class="lb">상태</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>신청</option><option>승인</option><option>수료</option><option>취소</option><option>불가</option></select></div>
+
+            <div class="lb">신청일</div>
+            <div class="vl"><input class="mf-input w-half" type="date"> <span>~</span> <input class="mf-input w-half" type="date"></div>
+            <div class="lb">운영부서</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option></select></div>
+            <div class="lb"></div>
+            <div class="vl"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 검색 액션</div>
+        <div class="grp-body">
+          <div class="search-act" style="margin-top:0;">
+            <button class="btn btn-outline">↻ 새로고침</button>
+            <button class="btn btn-primary">🔍 조회</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">4</span> 상태 집계 <span class="tail">B.2 지원 현황 컬럼과 동일 6항목</span></div>
+        <div class="grp-body">
+          <div class="stat-cards c6">
+            <div class="stat-card"><div class="label">전체</div><div class="val">28</div></div>
+            <div class="stat-card"><div class="label">신청</div><div class="val" style="color:#1a73e8">25</div></div>
+            <div class="stat-card"><div class="label">승인</div><div class="val" style="color:#00897b">1</div></div>
+            <div class="stat-card"><div class="label">수료</div><div class="val" style="color:#2e7d32">1</div></div>
+            <div class="stat-card"><div class="label">취소</div><div class="val" style="color:#c62828">1</div></div>
+            <div class="stat-card"><div class="label">불가</div><div class="val" style="color:#d84315">0</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">5</span> 일괄 제어 · 등록</div>
+        <div class="grp-body">
+          <div class="batch">
+            <span class="pfx">✓ 선택된 0명에 대해서</span>
+            <button class="btn btn-outline btn-mini">🔔 알림발송</button>
+            <button class="btn btn-outline btn-mini">👥 그룹관리</button>
+            <button class="btn btn-outline btn-mini">⚙ 그룹설정</button>
+            <span class="sp"></span>
+            <button class="btn btn-primary btn-mini">수료 처리</button>
+            <select class="filter-select btn-mini" style="width:112px;">
+              <option>상태 변경 ▾</option>
+              <option>신청</option>
+              <option>승인</option>
+              <option>수료</option>
+              <option>취소</option>
+              <option>불가</option>
+            </select>
+            <button class="btn btn-outline btn-mini">적용</button>
+            <span class="sp"></span>
+            <button class="btn btn-outline btn-mini">＋ 지원자 추가</button>
+            <button class="btn btn-success btn-mini">엑셀 일괄등록</button>
+          </div>
+
+          <div style="margin-top:10px;padding:10px 12px;border:1px dashed #ffab91;border-radius:8px;background:#fff8f6;">
+            <div style="font-size:11px;font-weight:700;color:#d84315;margin-bottom:6px;">🔍 [팝업 미리보기] 상태 변경 드롭박스에서 '불가' 선택 후 [적용] 클릭 시 표시되는 사유 입력 팝업(2026-09-02 신설)</div>
+            <div style="margin-bottom:8px;"><span class="help-txt">선택된 2명 : 최준혁, 한소율 — 아래 사유 1개가 선택된 모든 지원자에게 동일하게 적용됩니다.</span></div>
+            <div style="margin-bottom:10px;">
+              <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:5px;">불가 사유<span class="req">*</span> <span class="help-txt" style="font-weight:400;">— 필수 입력, 학생 알림 문구의 <code style="background:#fff;border:1px solid #eee;border-radius:3px;padding:0 3px;">$사유$</code>에 그대로 반영</span></div>
+              <textarea class="mf-input w-full" rows="2" placeholder="예 : 정원 마감으로 신청이 불가 처리되었습니다."></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;">
+              <button class="btn btn-outline btn-mini">취소</button>
+              <button class="btn btn-primary btn-mini">확인 (2명 일괄 적용)</button>
+            </div>
+            <div class="exc-box" style="margin-top:9px;">이후 지원자 목록의 [사유수정] 버튼으로 건별 개별 사유 수정 가능 — 일괄 입력한 사유는 시작값일 뿐 최종값이 아니다.</div>
+          </div>
+
+          <div style="margin-top:10px;padding:10px 12px;border:1px dashed #90caf9;border-radius:8px;background:#f8fbff;">
+            <div style="font-size:11px;font-weight:700;color:#1a73e8;margin-bottom:6px;">🔍 [팝업 미리보기] [엑셀 일괄등록] 클릭 시 표시되는 업로드 팝업 — E.2 교사용 화면과 동일 컴포넌트·검증 로직 공유</div>
+            <div style="margin-bottom:10px;">
+              <div style="font-size:11px;font-weight:600;color:#555;margin-bottom:5px;">학교<span class="req">*</span> <span class="help-txt" style="font-weight:400;">— 업로드할 명단이 소속된 학교를 먼저 선택(엑셀 파일에는 학교명 컬럼 불필요)</span></div>
+              <div style="position:relative;max-width:320px;">
+                <input class="mf-input w-full" placeholder="🔍 학교명 검색 (예 : 순천향)">
+              </div>
+              <div style="margin-top:6px;"><span class="tag t-done">선택됨 : 순천향고등학교 ✕</span></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+              <span class="help-txt">필수 컬럼(순서) : 이메일 · 학생명 · 학년 · 반 · 번호 (이메일 기준으로 기존 회원 매칭, 학교는 위에서 선택한 값으로 일괄 적용)</span>
+              <button class="btn btn-outline btn-mini" style="white-space:nowrap;flex-shrink:0;margin-left:8px;">⤓ 엑셀 양식 다운로드</button>
+            </div>
+            <div class="dropzone">
+              <div class="ic">📄</div>
+              <div class="t">학생 명단 엑셀 파일을 이곳에 끌어다 놓거나 클릭하여 업로드</div>
+              <div class="s">.xlsx · 최대 500행 · 학교 선택 전에는 업로드 비활성화</div>
+            </div>
+            <div style="margin-top:12px;">
+              <div style="font-size:11px;font-weight:700;color:#333;margin-bottom:6px;">업로드 결과 검증</div>
+              <div class="stat-cards" style="margin-bottom:9px;">
+                <div class="stat-card"><div class="label">총 업로드</div><div class="val">18</div></div>
+                <div class="stat-card"><div class="label">기존회원 매칭</div><div class="val" style="color:#2e7d32">12</div></div>
+                <div class="stat-card"><div class="label">신규 생성 예정</div><div class="val" style="color:#1a73e8">4</div></div>
+                <div class="stat-card"><div class="label">오류</div><div class="val" style="color:#c62828">2</div></div>
+              </div>
+              <table class="cha">
+                <thead><tr><th>이메일</th><th>학생명</th><th>학년</th><th>반</th><th>번호</th><th>처리 결과</th><th>비고</th></tr></thead>
+                <tbody>
+                  <tr><td>minsu@abc.kr</td><td>김민수</td><td>2</td><td>3</td><td>09</td><td><span class="tag t-done">기존회원 매칭</span></td><td class="help-txt">－</td></tr>
+                  <tr><td>yuna.new@abc.kr</td><td>서유나</td><td>1</td><td>2</td><td>18</td><td><span class="tag t-part">신규 생성</span></td><td class="help-txt">임의생성 학생으로 등록</td></tr>
+                  <tr class="off"><td class="no-mail">미입력</td><td>강태오</td><td>3</td><td>1</td><td>05</td><td><span class="tag t-canc">오류</span></td><td style="color:#c62828;">이메일 누락</td></tr>
+                  <tr class="off"><td>hana@abc.kr</td><td>윤하나</td><td>B</td><td>4</td><td>11</td><td><span class="tag t-canc">오류</span></td><td style="color:#c62828;">학년 형식 오류(숫자 아님)</td></tr>
+                </tbody>
+              </table>
+              <div class="exc-box" style="margin-top:7px;">⚠ 오류 행(이메일 누락·학년/반 형식 오류·이메일 중복 등)은 등록 대상에서 자동 제외 — 수정 후 재업로드하거나 정상 행만 선택하여 일괄 등록.</div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+              <button class="btn btn-outline btn-mini">취소</button>
+              <button class="btn btn-primary btn-mini">일괄 등록 (16명)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">6</span> 지원자 목록</div>
+        <div class="grp-body">
+          <div class="grid-wrap">
+            <table class="grid">
+              <thead>
+                <tr>
+                  <th style="width:30px;"><input type="checkbox" title="전체 선택"></th>
+                  <th class="sortable">이름</th>
+                  <th>아이디(이메일)</th>
+                  <th>학교</th>
+                  <th class="sortable">학년</th>
+                  <th>반/번호</th>
+                  <th>차수</th>
+                  <th class="sortable">신청일</th>
+                  <th>상태</th>
+                  <th>만족도</th>
+                  <th style="width:205px;">관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>김서준</td><td>seojun@abc.kr</td><td>순천향초</td><td>5</td><td>3-12</td>
+                  <td>1차</td><td>2026-07-09</td>
+                  <td><span class="tag t-wait">신청</span></td>
+                  <td class="satis wait">－</td>
+                  <td><div class="row-act"><button class="btn btn-outline btn-mini">프로필</button><button class="btn btn-outline btn-mini">신청서</button><button class="btn btn-outline btn-mini">취소</button></div></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>이하은</td><td class="no-mail">미등록</td><td>순천향중</td><td>2</td><td>1-07</td>
+                  <td>1차</td><td>2026-07-08</td>
+                  <td><span class="tag t-wait">신청</span></td>
+                  <td class="satis wait">－</td>
+                  <td><div class="row-act"><button class="btn btn-outline btn-mini">프로필</button><button class="btn btn-outline btn-mini">신청서</button><button class="btn btn-outline btn-mini">취소</button></div></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>최준혁</td><td>junhyuk@abc.kr</td><td>순천향중</td><td>3</td><td>2-05</td>
+                  <td>1차</td><td>2026-07-02</td>
+                  <td><span class="tag t-part">승인</span></td>
+                  <td class="satis wait">－</td>
+                  <td><div class="row-act"><button class="btn btn-outline btn-mini">프로필</button><button class="btn btn-outline btn-mini">취소</button></div></td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox"></td>
+                  <td>한소율</td><td>soyul@abc.kr</td><td>순천향고</td><td>2</td><td>1-14</td>
+                  <td>1차</td><td>2026-06-20</td>
+                  <td><span class="tag t-done">수료</span></td>
+                  <td class="satis done">완료</td>
+                  <td><div class="row-act"><button class="btn btn-outline btn-mini">프로필</button><button class="btn btn-primary btn-mini">수료증</button><button class="btn btn-outline btn-mini">취소</button></div></td>
+                </tr>
+                <tr class="off">
+                  <td><input type="checkbox"></td>
+                  <td>박도윤</td><td>doyun@abc.kr</td><td>순천향고</td><td>1</td><td>4-21</td>
+                  <td>2차</td><td>2026-07-05</td>
+                  <td><span class="tag t-canc">취소</span></td>
+                  <td class="satis wait">－</td>
+                  <td><div class="row-act"><button class="btn btn-outline btn-mini">프로필</button><button class="btn btn-primary btn-mini">복원</button></div></td>
+                </tr>
+                <tr class="off">
+                  <td><input type="checkbox"></td>
+                  <td>정하늘</td><td>haneul@abc.kr</td><td>순천향초</td><td>4</td><td>2-09</td>
+                  <td>1차</td><td>2026-07-11</td>
+                  <td><span class="tag t-rej">불가</span><div class="help-txt" style="margin-top:2px;">정원 마감</div></td>
+                  <td class="satis wait">－</td>
+                  <td><div class="row-act"><button class="btn btn-outline btn-mini">프로필</button><button class="btn btn-outline btn-mini">사유수정</button></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">7</span> 행 관리</div>
+        <div class="grp-body">
+          <div class="rq" style="margin-bottom:0;">
+            <div class="rq-t">관리 컬럼 동작 (위 지원자 목록 표 참고)</div>
+            <ul>
+              <li>모든 행 공통 : <b>[프로필]</b> 버튼으로 학생 기본정보·역량점수 팝업 표시(B.1과 동일 구성)</li>
+              <li>신청·수료 상태 행 : <b>[문서]</b> 버튼 — 상태별로 라벨이 바뀌는 상태연동 버튼(신청 : 신청서 / 수료 : 수료증), 문서 버튼 옆에 <b>[취소]</b> 버튼 배치</li>
+              <li>승인 상태 행 : 문서 버튼 없이 <b>[취소]</b> 버튼만 표시(2026-09-02 변경 — 참여확인서 버튼 폐기)</li>
+              <li>취소 상태 행 : 문서 버튼 없이 <b>[복원]</b> 버튼만 표시</li>
+              <li>불가 상태 행 : 문서 버튼 없이 <b>[사유수정]</b> 버튼만 표시, 상태값 아래 사유를 함께 노출(2026-09-02 신설)</li>
+              <li class="em">수료 처리 시 수료증 자동 발급</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">8</span> 하단 유틸</div>
+        <div class="grp-body">
+          <div class="bottom-bar">
+            <button class="btn btn-success btn-lg">⤓ Excel 다운로드</button>
+            <ul class="pager"><li><a href="#">&lt;</a></li><li class="on"><a href="#">1</a></li><li><a href="#">2</a></li><li><a href="#">3</a></li><li><a href="#">&gt;</a></li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 공통 검색</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <ul>
+              <li>학교급 · 학교 · 학년 · 반/번호 · 이름/아이디</li>
+              <li>이메일 등록 여부 필터</li>
+            </ul>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li class="em">대학 학적필터(재학/휴학) 대신 초중고 기준으로 대체 — 회의록 우선</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 특화 검색</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <ul><li>차수 · 상태 · 신청일 · 운영부서</li></ul>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li class="em">프로그램 필드는 리스트에서 선택 후 진입하므로 읽기전용 표시로 고정</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 검색 액션</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>새로고침 · 조회</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">4</span> 상태 집계</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>전체 · 신청 · 승인 · 수료 · 취소 · 불가 (6항목) 인원 집계(2026-09-02 변경 — 대기 삭제, 참여→승인·불참→불가)</li>
+              <li>전체 신청 인원을 한눈에 조회</li>
+              <li class="em">B.2 프로그램 리스트의 지원 현황 컬럼과 동일한 6개 항목으로 반영</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">5</span> 일괄 제어·등록</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>선택 학생 공통 액션 — 알림발송 · 그룹관리 · 그룹설정을 먼저 배치하고, 이 화면 고유 액션(수료 처리 · 상태 변경)을 그 뒤에 덧붙인다</li>
+              <li>알림발송은 이메일 채널로 발송 — 별도 [메일 발송] 버튼을 두지 않고 알림발송이 이메일 발송을 담당한다</li>
+              <li>그룹관리 · 그룹설정은 화면마다 재구현하지 않고 공통 컴포넌트를 재사용한다</li>
+              <li>선택 대상 수료 처리</li>
+              <li class="em">상태 변경은 드롭박스(신청/승인/수료/취소/불가)로 대상 선택 후 [적용] 버튼으로 일괄 반영(2026-09-02 변경 — 대기 삭제, 참여→승인·불참→불가)</li>
+              <li class="em">'불가' 선택 후 [적용] 클릭 시 사유 입력 팝업이 표시되며 사유는 필수 입력이다 — 다수 선택 시 입력한 사유 1개가 선택된 모든 건에 동일 적용되고, 이후 지원자 목록의 [사유수정]으로 건별 개별 수정이 가능하다(2026-09-02 신설)</li>
+              <li>목록 전체를 대상으로 하는 기능(지원자 추가 · 엑셀 일괄등록)은 구분선 뒤로 분리 — 선택 액션과 같은 줄에 섞으면 선택 없이 전체가 처리되는 것으로 오인한다</li>
+              <li>개별 지원자 수동 추가</li>
+              <li>[엑셀 일괄등록] 클릭 시 팝업 — 학교 선택(검색, 필수) → 엑셀 업로드(컬럼 순서 : 이메일·학생명·학년·반·번호, 양식 다운로드 제공) → 유효성 검증 → 케이스별 오류 표시 순으로 진행</li>
+              <li class="em">학교를 먼저 선택해야 업로드 활성화 — 엑셀 파일에는 학교명 컬럼 불필요, 선택값을 전체 행에 일괄 적용</li>
+              <li>이메일이 기존 회원과 일치하면 해당 계정에 신청 반영, 불일치 시 임의생성 학생으로 신규 등록(B.1 임의생성 개념 재사용)</li>
+              <li>오류 케이스 : 이메일 누락, 학년/반 형식 오류(숫자 외 입력), 이메일 중복 등 — 행 단위로 비고 컬럼에 사유 표시, 오류 행은 등록 대상에서 자동 제외</li>
+              <li class="em">본 업로드·검증 UI 및 규칙은 E.2 교사용 단체신청 화면과 동일 컴포넌트를 공유한다</li>
+              <li class="em">핸드폰 미수집 → SMS 알림 발송 기능 미반영. 알림발송은 시스템 알림·이메일 채널만</li>
+              <li class="em">행 체크박스에 학생 식별자가 없으면 버튼은 보이는데 대상이 0명이 되는 무증상 고장이 된다. 중복 제거 키는 아이디(이메일)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">6</span> 지원자 목록</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>타입</th></tr>
+              <tr><td>선두필드</td><td>이름/아이디/학교/학년/반·번호</td></tr>
+              <tr><td>차수·신청일·상태</td><td>표시전용</td></tr>
+              <tr><td class="em">만족도</td><td class="em">수료 상태 지원자만 응답 여부(완료/미응답) 표시, 그 외 상태는 "－"</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li class="em">이메일 미등록 학생은 인증·배지·수료증 발급 불가 (목록에 표시)</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">7</span> 행 관리</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>모든 행 : [프로필] + 상태별 문서 버튼(신청·수료만 해당) + [취소]/[복원]/[사유수정]</li>
+              <li class="em">문서 버튼 라벨은 상태별로 상이 — 신청 : 신청서 / 수료 : 수료증(2026-09-02 변경 — 승인 상태의 참여확인서 버튼 폐기)</li>
+              <li>승인·취소·불가 상태는 문서 버튼 미노출 — 승인 : [취소] / 취소 : [복원] / 불가 : [사유수정]</li>
+              <li class="em">수료 처리 시 수료증 자동 발급</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">8</span> 하단 유틸</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>Excel 다운로드 좌측 · 페이징 중앙</li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bottom-3">
+
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>B.4</td></tr>
+          <tr><th>화면명</th><td>프로그램 지원자 관리</td></tr>
+          <tr><th>메뉴 경로</th><td>비교과 프로그램 &gt; 프로그램 지원자 관리</td></tr>
+          <tr><th>유형</th><td>조회 · 관리형</td></tr>
+          <tr><th>사용자</th><td>관리자 · 부서운영자</td></tr>
+          <tr><th>목적</th><td>진입한 프로그램 1건의 지원자 조회 · 관리</td></tr>
+          <tr><th>연계</th><td>프로그램 리스트(B.2) · 등록(B.3) · 통계(B.5) · B.8 사용자 관리 · E.2 교사용 단체신청(엑셀 업로드·검증 컴포넌트 공유) · B.1 임의생성 학생 개념</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>초중고 기준 검색</b>대학 학적필터(재학/휴학) 대신 학교급·학년·반/번호 기준으로 대체</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>상태 집계 6항목</b>전체·신청·승인·수료·취소·불가 인원 카운트, B.2와 동일 항목 반영(2026-09-02 변경)</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>일괄 처리</b>선택 학생 공통 액션(알림발송·그룹관리·그룹설정) + 수료 처리 + 상태 변경 드롭박스(신청/승인/수료/취소/불가) 적용 + 엑셀 일괄등록, '불가' 적용 시 사유 입력 팝업 필수(2026-09-02 신설)</div></div>
+        <div class="stepline"><span class="tag ph-4">S4</span><div class="tx"><b>상태연동 문서 버튼</b>[프로필] 공통 노출 + 상태별 문서 버튼(신청 : 신청서 / 수료 : 수료증 — 승인 상태의 참여확인서 버튼은 폐기), 수료 처리 시 수료증 자동 발급·만족도 응답여부 표시, 이메일 미등록자는 인증·배지·수료증 발급 불가</div></div>
+        <div class="stepline"><span class="tag ph-5">S5</span><div class="tx"><b>프로그램 필드 고정</b>진입한 프로그램명을 읽기전용으로 고정, 화면 타이틀에도 동일 반영</div></div>
+        <div class="stepline"><span class="tag ph-1">S6</span><div class="tx"><b>엑셀 일괄등록 팝업</b>학교 검색·선택(필수) → 엑셀 업로드(컬럼 : 이메일·학생명·학년·반·번호, 양식 다운로드 제공) → 유효성 검증 → 케이스별 오류 표시 순으로 진행 — E.2와 동일 컴포넌트 공유(신규 반영)</div></div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">프로그램 리스트(B.2)에서 특정 프로그램 진입 시 해당 프로그램 1건의 지원자만 조회·관리. 화면 타이틀은 진입한 프로그램명으로 고정 표시(회의록 2026-07-30).</div>
+        <div class="std-box">선택 학생 공통 액션 — 알림발송·그룹관리·그룹설정을 먼저 배치하고 화면 고유 액션을 뒤에 덧붙인다. 목록 전체 대상 기능(지원자 추가·엑셀 일괄등록)은 구분선 뒤로 분리. 중복 제거 키는 아이디(이메일).</div>
+        <div class="std-box">(2026-09-02 변경) 지원자 상태는 신청·승인·수료·취소·불가 5단계로 관리한다 — 기존 신청/대기/참여/수료/취소/불참 6단계에서 대기를 삭제하고 참여→승인, 불참→불가로 명칭을 변경했다(B.2·A.4·E.3 공통 적용). '불가'로 상태 변경 시 사유 입력이 필수이며, 다수 선택 일괄 처리 시 입력한 사유 1개가 선택된 모든 건에 동일 적용되고 이후 [사유수정] 버튼으로 건별 개별 수정이 가능하다. 상태연동 문서 버튼 중 참여확인서는 폐기 — 승인 상태는 문서 버튼 없이 [취소]만 노출한다(학생 화면 A.4도 동일 적용).</div>
+        <div class="std-box">엑셀 일괄등록 시 학교를 먼저 선택해야 하며, 엑셀 컬럼 순서는 이메일 · 학생명 · 학년 · 반 · 번호로 고정한다(E.2와 동일 규칙 공유). 이메일은 필수값이며, 이메일 일치 여부로 기존회원/임의생성을 자동 판별한다.</div>
+        <div class="std-box">부서운영자로 로그인한 경우 조회·관리 범위는 본인 소속 운영부서가 등록한 프로그램으로 제한된다 — 화면 입력이 아닌 로그인 계정의 소속 운영부서로 서버단에서 강제(B.8 사용자 관리 연계, 스타일규칙 5-1항과 동일 원칙). 총괄관리자는 제한 없이 전체 조회.</div>
+        <div class="exc-box"><b>SMS 발송 미반영</b> — 핸드폰 번호 미수집(회의록). 알림발송은 시스템 알림·이메일 채널만 — 별도 [메일 발송] 버튼 미생성.</div>
+        <div class="exc-box"><b>[늘리기]·[일괄삭제] 생성 금지</b> — 팀 표준 제외.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector(".doc");
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM), total = doc.scrollHeight;
+    var n = Math.max(1, Math.ceil(total / pageH));
+    if(n < 2) return;
+    var layer = document.createElement("div");
+    layer.className = "page-break-guide"; layer.style.height = total + "px";
+    for(var i = 1; i < n; i++){
+        var l = document.createElement("div");
+        l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+        layer.appendChild(l);
+    }
+    doc.appendChild(layer);
+})();
+</script>
+
+</body>
+</html>

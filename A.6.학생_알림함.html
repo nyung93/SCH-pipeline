@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A.6 알림함</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+.top-util{ display:flex; align-items:center; gap:6px; margin-left:auto; flex-shrink:0; }
+
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+.rq{ margin-bottom:11px; } .rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px; display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li.em{ color:#c62828; font-weight:600; } .rq li.em::before{ color:#c62828; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; }
+.rqt.spec th:first-child{ width:66px; }
+
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; } .btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+.w-full{ width:100%; }
+
+.cg{ display:grid; grid-template-columns:82px 1fr 82px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .lb:nth-last-child(-n+4), .cg .vl:nth-last-child(-n+4){ border-bottom:none; }
+
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; } .ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; } .ph-4{ background:#e8f5e9; color:#2e7d32; } .ph-5{ background:#fce4ec; color:#c2185b; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; } .stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec; border-radius:5px; margin-top:5px; line-height:1.5; }
+.exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe; border-radius:5px; margin-top:5px; line-height:1.5; }
+.std-box:first-child{ margin-top:0; }
+
+/* A.6 전용 : 알림 리스트 */
+.list-head{ display:flex; align-items:center; margin-bottom:9px; }
+.list-head .cnt{ font-size:12px; font-weight:700; color:#333; }
+.list-head .cnt b{ color:#1a73e8; }
+.list-head .act{ margin-left:auto; }
+
+.hist-list{ border-top:2px solid #1a73e8; }
+.hist-row{ display:flex; align-items:center; gap:12px; padding:9px 4px; border-bottom:1px solid #eee; }
+.hist-row.unread{ background:#f8fbff; }
+.hist-thumb{ width:40px; height:40px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:17px; color:#fff; }
+.hist-info{ flex:1; min-width:0; }
+.hist-title{ font-size:11px; line-height:1.5; color:#1a1a1a; }
+.hist-row.unread .hist-title{ font-weight:700; }
+.hist-meta{ font-size:10px; color:#888; margin-top:3px; }
+.hist-mng{ flex-shrink:0; display:flex; align-items:center; gap:8px; }
+.rd{ font-size:10px; font-weight:700; padding:1px 7px; border-radius:8px; }
+.rd-un{ background:#e8f0fe; color:#1a73e8; }
+.rd-on{ background:#f2f2f2; color:#aaa; }
+
+.hist-bottom{ display:flex; align-items:center; justify-content:center; margin-top:9px; }
+.pagination{ display:flex; list-style:none; gap:2px; }
+.pagination a{ display:block; padding:4px 9px; border:1px solid #ddd; background:#fff; color:#666; text-decoration:none; font-size:11px; border-radius:3px; }
+.pagination li.active a{ background:#1a73e8; color:#fff; border-color:#1a73e8; }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb"><span class="page-num strong">화면 A.6</span></div>
+    <div>
+      <div class="page-title">알림함</div>
+      <div class="page-desc">학생이 자신에게 온 프로그램 신청·수료·역량점수·배지 관련 알림을 확인하는 화면(신설, 2026-08-31). 마이페이지(A.2) 등 특정 화면에 종속되지 않고 전역 헤더 알림 아이콘(🔔)으로 어디서나 진입한다.</div>
+    </div>
+    <div class="top-util">
+      <button class="btn btn-outline btn-mini">⚙ 관리</button>
+      <button class="btn btn-outline btn-mini">📘 가이드</button>
+      <button class="btn btn-outline btn-mini">🛠 유지보수</button>
+      <span class="page-num" style="margin-left:6px;">PAGE 1</span>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 검색 조건</div>
+        <div class="grp-body">
+          <div class="cg">
+            <div class="lb">알림 유형</div>
+            <div class="vl">
+              <select class="filter-select w-full">
+                <option>전체</option>
+                <option>신청 결과</option>
+                <option>일정 변경 · 취소</option>
+                <option>수료 · 역량점수</option>
+                <option>디지털 배지</option>
+              </select>
+            </div>
+            <div class="lb">읽음 여부</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>안읽음</option><option>읽음</option></select></div>
+          </div>
+          <div class="search-act">
+            <button class="btn btn-outline">↻ 새로고침</button>
+            <button class="btn btn-primary">🔍 조회</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 알림 목록</div>
+        <div class="grp-body">
+          <div class="list-head">
+            <div class="cnt">미확인 <b>3</b>건</div>
+            <div class="act"><button class="btn btn-outline btn-mini">✓ 전체 읽음처리</button></div>
+          </div>
+          <div class="hist-list">
+
+            <div class="hist-row unread">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#ffca28,#e0a92e);">🏅</div>
+              <div class="hist-info">
+                <div class="hist-title">축하드립니다! 역량 점수 누적에 따라 창의 실버 배지가 발급되었습니다!</div>
+                <div class="hist-meta">2026-08-31 09:00</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-un">안읽음</span><button class="btn btn-outline btn-mini">확인</button></div>
+            </div>
+
+            <div class="hist-row unread">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#5b80bd,#3899ca);">🎓</div>
+              <div class="hist-info">
+                <div class="hist-title">AI 인공지능 기초 코딩 워크숍 수료로 창의 역량 점수 7점이 부여되었습니다.</div>
+                <div class="hist-meta">2026-08-30 18:20</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-un">안읽음</span><button class="btn btn-outline btn-mini">확인</button></div>
+            </div>
+
+            <div class="hist-row unread">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#e65100,#ff9e57);">📅</div>
+              <div class="hist-info">
+                <div class="hist-title">나의 진로 설계: 꿈을 찾는 시간의 운영 일정이 변경되었습니다.</div>
+                <div class="hist-meta">2026-08-30 14:10</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-un">안읽음</span><button class="btn btn-outline btn-mini">확인</button></div>
+            </div>
+
+            <div class="hist-row">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#c62828,#e57373);">✕</div>
+              <div class="hist-info">
+                <div class="hist-title">글로벌 문화체험 캠프가 취소되었습니다.</div>
+                <div class="hist-meta">2026-08-29 10:05</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-on">읽음</span></div>
+            </div>
+
+            <div class="hist-row">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#2e7d32,#66bb6a);">✓</div>
+              <div class="hist-info">
+                <div class="hist-title">AI 인공지능 기초 코딩 워크숍 신청이 승인되었습니다.</div>
+                <div class="hist-meta">2026-08-27 11:30</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-on">읽음</span></div>
+            </div>
+
+            <div class="hist-row">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#8b93a0,#a9b1ba);">✕</div>
+              <div class="hist-info">
+                <div class="hist-title">인성교육 워크숍 참여가 불가 처리되었습니다.(사유:정원마감)</div>
+                <div class="hist-meta">2026-08-25 09:15</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-on">읽음</span></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 하단 페이징</div>
+        <div class="grp-body">
+          <div class="hist-bottom">
+            <ul class="pagination"><li><a href="#">&lt;</a></li><li class="active"><a href="#">1</a></li><li><a href="#">&gt;</a></li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 검색 조건</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>타입</th></tr>
+              <tr><td>알림 유형</td><td>select</td></tr>
+              <tr><td>읽음 여부</td><td>select</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>알림 유형(전체/신청 결과/일정 변경·취소/수료·역량점수/디지털 배지) · 읽음 여부 조합 조회</li>
+              <li>검색 액션 — 새로고침 · 조회, [새로고침]은 reset이 아닌 최초 진입 상태로 복귀(공통 규칙과 동일)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 알림 목록</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">알림 유형 4종 · 문구</div>
+            <table class="rqt"><tr><th>유형</th><th>문구 예시</th></tr>
+              <tr><td>신청 결과 – 승인</td><td>$프로그램명$ 신청이 승인되었습니다.</td></tr>
+              <tr><td>신청 결과 – 불가</td><td>$프로그램명$ 참여가 불가 처리되었습니다.(사유:$사유$)</td></tr>
+              <tr><td>일정 변경</td><td>$프로그램명$의 운영 일정이 변경되었습니다.</td></tr>
+              <tr><td>취소</td><td>$프로그램명$이 취소되었습니다.</td></tr>
+              <tr><td>수료·역량점수</td><td>$프로그램명$ 수료로 $역량명$ 역량 점수 $점수$점이 부여되었습니다.</td></tr>
+              <tr><td>디지털 배지 발급</td><td>축하드립니다! 역량 점수 누적에 따라 $역량명$ $배지등급$ 배지가 발급되었습니다!</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>[확인] 클릭 시 해당 알림을 읽음 처리한다 — 화면 이동 기능은 없음(단순 확인 버튼), 이미 읽음 처리된 건은 확인 버튼 미노출</li>
+              <li>안읽음 건은 행 배경 강조 + 문구 굵게 표시, [전체 읽음처리] 클릭 시 현재 조회된 목록 전체를 읽음 처리</li>
+              <li class="em">일정 변경·취소 문구는 예시 문구가 없어 다른 알림과 동일한 톤("~되었습니다")으로 신규 작성(2026-08-31 초안)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 하단 페이징</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>페이지 번호 중앙 정렬</li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bottom-3">
+
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>A.6</td></tr>
+          <tr><th>화면명</th><td>알림함</td></tr>
+          <tr><th>메뉴 경로</th><td>전역 헤더 🔔 알림 아이콘 (특정 대메뉴 하위 아님)</td></tr>
+          <tr><th>유형</th><td>조회 · 목록형</td></tr>
+          <tr><th>사용자</th><td>학생</td></tr>
+          <tr><th>목적</th><td>학생 본인의 신청 결과·일정 변경·수료·역량점수·배지 알림 확인</td></tr>
+          <tr><th>연계</th><td>A.4 프로그램 신청내역 · A.5 역량 인증제</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>알림 유형 4종</b>신청 결과(승인/불가)·일정 변경·취소·수료 및 역량점수 부여·디지털 배지 발급</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>읽음 처리</b>안읽음 건 [확인] 클릭 시 개별 읽음 처리(화면 이동 없음) + [전체 읽음처리] 일괄 처리, 이미 읽음 처리된 건은 확인 버튼 미노출</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>전역 진입</b>특정 대메뉴에 종속되지 않고 헤더 알림 아이콘으로 모든 화면에서 접근</div></div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">본 화면은 학생 본인의 알림만 조회한다 — 다른 학생의 알림은 조회 범위에 포함되지 않는다(로그인 계정 기준 서버단 강제).</div>
+        <div class="std-box">알림 문구의 <code>$프로그램명$</code>·<code>$역량명$</code>·<code>$점수$</code>·<code>$배지등급$</code>·<code>$사유$</code>는 발송 시점의 실제 값으로 치환되는 변수다.</div>
+        <div class="std-box">(2026-09-01 확정) 본 화면은 메뉴 트리에 포함하지 않고 전역 헤더 🔔 알림 아이콘 전용으로 진입한다 — 아이콘 클릭 시 드롭다운 미리보기 없이 바로 본 화면(알림함 목록)으로 이동한다.</div>
+        <div class="exc-box"><b>SMS 채널 미반영</b> — 핸드폰 번호 미수집(회의록 2026-07-30). 알림은 시스템 알림·이메일 채널만.</div>
+        <div class="exc-box"><b>[늘리기]·[일괄삭제] 생성 금지</b> — 팀 표준 제외.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector(".doc");
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM), total = doc.scrollHeight;
+    var n = Math.max(1, Math.ceil(total / pageH));
+    if(n < 2) return;
+    var layer = document.createElement("div");
+    layer.className = "page-break-guide"; layer.style.height = total + "px";
+    for(var i = 1; i < n; i++){
+        var l = document.createElement("div");
+        l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+        layer.appendChild(l);
+    }
+    doc.appendChild(layer);
+})();
+</script>
+
+</body>
+</html>

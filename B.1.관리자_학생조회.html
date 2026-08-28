@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B.1 학생 조회</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-num.page-right{ margin-left:auto; flex-shrink:0; align-self:center; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+.rq{ margin-bottom:11px; }
+.rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px; display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; }
+.rq li.em::before{ color:#c62828; }
+
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; }
+.rqt.spec th:first-child{ width:66px; }
+
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; }
+.btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-success{ background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.btn-lg{ height:30px; padding:5px 18px; font-size:12px; }
+.btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+.w-full{ width:100%; }
+
+.cg{ display:grid; grid-template-columns:82px 1fr 82px 1fr 82px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .lb:nth-last-child(-n+6), .cg .vl:nth-last-child(-n+6){ border-bottom:none; }
+
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+
+.bulk-bar{ display:flex; align-items:center; gap:6px; padding:7px 9px; background:#f8fbff;
+  border:1px solid #cfe2f7; border-radius:6px; }
+.bulk-bar .sel-count{ font-size:11px; color:#1a73e8; font-weight:700; margin-right:auto; }
+.bulk-bar .sel-count b{ font-size:12.5px; }
+.chk{ width:12px; height:12px; vertical-align:middle; accent-color:#1a73e8; margin:0; }
+
+.stat-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:11px; }
+.stat-card{ background:#f8f8f8; border-radius:6px; padding:9px 11px; }
+.stat-card .label{ font-size:10.5px; color:#888; line-height:1.4; }
+.stat-card .val{ font-size:20px; font-weight:700; margin-top:3px; line-height:1.2; }
+
+.area{ display:grid; grid-template-columns:70px 1fr 54px; align-items:center; gap:10px; margin:7px 0; font-size:11px; }
+.area .an{ font-weight:600; color:#555; }
+.area .bar{ height:16px; border-radius:8px; background:#eef1f4; overflow:hidden; }
+.area .bar i{ display:block; height:100%; border-radius:8px; }
+.area .cnt{ text-align:right; font-weight:700; }
+.a-cr i{ background:#1a73e8; } .a-em i{ background:#2e7d32; } .a-gl i{ background:#6a1b9a; }
+
+.ct{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.ct th{ background:#f8f8f8; padding:6px 5px; text-align:center; font-weight:600;
+  border-bottom:1px solid #e0e0e0; white-space:nowrap; color:#555; line-height:1.4; }
+.ct td{ padding:6px 5px; border-bottom:1px solid #eee; text-align:center; white-space:nowrap; line-height:1.4; }
+.ct tr:last-child td{ border-bottom:none; }
+.ct td.nm{ text-align:left; }
+.ct th.sortable::after{ content:' ↕'; color:#aaa; font-size:9px; }
+
+.bottom-bar{ position:relative; display:flex; align-items:center; margin-top:11px; }
+.pager{ position:absolute; left:0; right:0; display:flex; justify-content:center; gap:3px; list-style:none; }
+.pager a{ display:block; padding:4px 9px; border:1px solid #ddd; border-radius:4px;
+  background:#fff; color:#666; text-decoration:none; font-size:10.5px; line-height:1.4; }
+.pager li.on a{ background:#1a73e8; color:#fff; border-color:#1a73e8; }
+
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; } .ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; } .ph-4{ background:#e8f5e9; color:#2e7d32; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; } .stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec; border-radius:5px; margin-top:5px; line-height:1.5; }
+.exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe; border-radius:5px; margin-top:5px; line-height:1.5; }
+.std-box:first-child{ margin-top:0; }
+
+/* B.1 전용 : 학생목록 상태 태그 · 대시 */
+.tag{ padding:1px 7px; border-radius:3px; font-size:10px; font-weight:700; white-space:nowrap; }
+.t-join{ background:#e8f0fe; color:#1a73e8; }
+.t-auto{ background:#fff3e0; color:#e65100; }
+.dash{ color:#ccc; }
+
+/* B.1 전용 : 프로필 팝업 미리보기 */
+.popup-preview{ margin-top:10px; padding:10px 12px; border:1px dashed #90caf9; border-radius:8px; background:#f8fbff; position:relative; }
+.popup-preview .pt{ font-size:11px; font-weight:700; color:#1a73e8; margin-bottom:6px; }
+.pp-sec{ font-size:11px; font-weight:700; color:#333; margin:8px 0 4px; }
+.pp-sec:first-of-type{ margin-top:0; }
+.pp-tb{ margin-bottom:2px; background:#fff; }
+.mini-tb{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.mini-tb th{ background:#f8f8f8; padding:5px 6px; border:1px solid #eee; color:#555; font-weight:600; text-align:center; }
+.mini-tb td{ padding:5px 6px; border:1px solid #eee; text-align:center; }
+.mini-tb td.al{ text-align:left; }
+.pp-score{ display:flex; align-items:center; gap:12px; background:#fff; border:1px solid #e0e0e0; border-radius:6px; padding:8px 10px; }
+.pp-medal-wrap{ flex-shrink:0; text-align:center; width:56px; }
+.badge-med{ width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+           font-size:10px; color:#fff; margin-right:3px; vertical-align:middle; }
+.bm-silver{ background:radial-gradient(circle at 35% 30%,#e9edf1,#aab4bf); border:1px solid #cfd6dd; color:#5a6472; }
+.bm-gold{ background:radial-gradient(circle at 35% 30%,#ffe08a,#e0a92e); border:1px solid #f2cf6b; color:#7a5a10; }
+.pp-medal{ width:32px; height:32px; font-size:13px; }
+.pp-medal-lb{ font-size:10px; color:#888; margin-top:3px; white-space:nowrap; }
+.area-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
+.dot-cr{ background:#1a73e8; } .dot-em{ background:#2e7d32; } .dot-gl{ background:#6a1b9a; }
+.pt-cr{ color:#1a73e8; font-weight:700; } .pt-em{ color:#2e7d32; font-weight:700; } .pt-gl{ color:#6a1b9a; font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb"><span class="page-num strong">화면 B.1</span></div>
+    <div>
+      <div class="page-title">학생 조회</div>
+      <div class="page-desc">관리자가 전체 학생(시스템가입 + 임의생성)을 통합 조회하는 화면. 대학이 아닌 초·중·고 체험 프로그램 특성상 재학/휴학 학적 구분은 사용하지 않음.</div>
+    </div>
+    <span class="page-num page-right">PAGE 1</span>
+  </div>
+
+  <div class="layout">
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 검색 조건</div>
+        <div class="grp-body">
+          <div class="cg">
+            <div class="lb">학생유형</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>시스템가입</option><option>임의생성</option></select></div>
+            <div class="lb">학교급</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>초등학교</option><option>중학교</option><option>고등학교</option></select></div>
+            <div class="lb" style="border-bottom:1px solid #eee;">학교</div>
+            <div class="vl" style="border-bottom:1px solid #eee;"><input class="mf-input w-full" placeholder="학교명"></div>
+
+            <div class="lb">학년</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option></select></div>
+            <div class="lb">이름 / 아이디</div>
+            <div class="vl"><input class="mf-input w-full" placeholder="검색어 입력"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 검색 액션</div>
+        <div class="grp-body">
+          <div class="search-act" style="margin-top:0;">
+            <button class="btn btn-outline">↻ 새로고침</button>
+            <button class="btn btn-primary">🔍 조회</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 선택 학생 액션 <span class="tail">고정 — 임의 제거 금지</span></div>
+        <div class="grp-body">
+          <div class="bulk-bar">
+            <span class="sel-count">선택 <b>0</b>명</span>
+            <button class="btn btn-outline">🔔 알림발송</button>
+            <button class="btn btn-outline">👥 그룹관리</button>
+            <button class="btn btn-outline">⚙ 그룹설정</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">4</span> 학생 목록</div>
+        <div class="grp-body">
+          <table class="ct">
+            <thead>
+              <tr>
+                <th style="width:26px;"><input type="checkbox" class="chk" title="전체 선택"></th>
+                <th style="width:64px;">구분</th>
+                <th class="sortable">이름</th>
+                <th>아이디(이메일)</th>
+                <th>학교급</th>
+                <th>학교</th>
+                <th class="sortable">학년</th>
+                <th>반</th>
+                <th class="sortable">등록일</th>
+                <th class="sortable">최근 접속일</th>
+                <th style="width:64px;">관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td><span class="tag t-join">시스템가입</span></td>
+                <td class="nm">김서준</td><td class="nm">sjkim01@sch.ac.kr</td>
+                <td>초등학교</td><td>순천향초</td><td>5학년</td><td>2반</td><td>2026-03-02</td><td>2026-08-05</td>
+                <td><button class="btn btn-primary btn-mini">프로필</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td><span class="tag t-join">시스템가입</span></td>
+                <td class="nm">이하은</td><td class="nm">haeun.lee02@sch.ac.kr</td>
+                <td>중학교</td><td>순천향중</td><td>2학년</td><td>3반</td><td>2026-03-05</td><td>2026-08-04</td>
+                <td><button class="btn btn-primary btn-mini">프로필</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td><span class="tag t-join">시스템가입</span></td>
+                <td class="nm">이도현</td><td class="nm">dhlee05@sch.ac.kr</td>
+                <td>중학교</td><td>순천향중</td><td>1학년</td><td>2반</td><td>2026-03-12</td><td>2026-07-30</td>
+                <td><button class="btn btn-primary btn-mini">프로필</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td><span class="tag t-auto">임의생성</span></td>
+                <td class="nm">정민준</td><td class="nm">minjun.jeong@naver.com</td>
+                <td>초등학교</td><td>온양초</td><td>4학년</td><td class="dash">－</td><td>2026-07-20</td><td class="dash">－</td>
+                <td><button class="btn btn-primary btn-mini">프로필</button></td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td><span class="tag t-auto">임의생성</span></td>
+                <td class="nm">한소율</td><td class="nm">soyul.han@gmail.com</td>
+                <td>중학교</td><td>아산중</td><td>3학년</td><td class="dash">－</td><td>2026-07-22</td><td class="dash">－</td>
+                <td><button class="btn btn-primary btn-mini">프로필</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">5</span> 행 관리</div>
+        <div class="grp-body">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#555;">
+            각 행의 <button class="btn btn-primary btn-mini">프로필</button> 버튼 클릭 시 해당 학생의 상세 정보 팝업 표시 (6번 참조)
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">6</span> 프로필 팝업</div>
+        <div class="grp-body">
+          <div class="popup-preview">
+            <div class="pt">🔍 [팝업 미리보기] '프로필' 클릭 시 표시되는 학생 상세 정보 (예시 : 김서준)</div>
+
+            <div class="pp-sec">① 학생 기본정보</div>
+            <table class="mini-tb pp-tb">
+              <tr><th style="width:64px;">이름</th><td class="al">김서준</td><th style="width:90px;">학교급 / 학교</th><td class="al">초등학교 / 순천향초</td><th style="width:56px;">학년</th><td class="al">5학년</td></tr>
+              <tr><th>아이디</th><td class="al">sjkim01@sch.ac.kr</td><th>구분</th><td class="al" colspan="3"><span class="tag t-join">시스템가입</span></td></tr>
+            </table>
+
+            <div class="pp-sec">② 총점수 · 역량별 점수 · 배지 이미지</div>
+            <div class="pp-score">
+              <div class="pp-medal-wrap">
+                <span class="badge-med bm-silver pp-medal">◇</span>
+                <div class="pp-medal-lb">창의 실버</div>
+              </div>
+              <table class="mini-tb pp-tb" style="flex:1;">
+                <tr><th>총점수</th><th><span class="area-dot dot-cr"></span>창의</th><th><span class="area-dot dot-em"></span>공감</th><th><span class="area-dot dot-gl"></span>글로벌</th></tr>
+                <tr><td style="font-weight:700;">25</td><td class="pt-cr">12</td><td class="pt-em">8</td><td class="pt-gl">5</td></tr>
+              </table>
+            </div>
+
+            <div class="pp-sec">③ 비교과 프로그램 이수정보</div>
+            <table class="mini-tb pp-tb">
+              <tr><th style="text-align:left;">프로그램명</th><th style="width:70px;">영역</th><th style="width:100px;">이수일</th><th style="width:90px;">취득 역량점수</th></tr>
+              <tr><td class="al">AI 인공지능 기초 코딩 워크숍</td><td>창의</td><td>2026-06-14</td><td>7점</td></tr>
+              <tr><td class="al">과학 탐구 동아리</td><td>창의</td><td>2026-07-30</td><td>5점</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">7</span> 하단 유틸</div>
+        <div class="grp-body">
+          <div class="bottom-bar" style="margin-top:0;">
+            <button class="btn btn-success btn-lg">⤓ Excel 다운로드</button>
+            <ul class="pager"><li><a href="#">&lt;</a></li><li class="on"><a href="#">1</a></li><li><a href="#">2</a></li><li><a href="#">3</a></li><li><a href="#">&gt;</a></li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 검색 조건</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>타입</th></tr>
+              <tr><td>학생유형</td><td>select</td></tr>
+              <tr><td>학교급</td><td>select</td></tr>
+              <tr><td>학교</td><td>text</td></tr>
+              <tr><td>학년</td><td>select</td></tr>
+              <tr><td>이름/아이디</td><td>text</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>학생유형(전체/시스템가입/임의생성) · 학교급 · 학교 · 학년 · 이름/아이디 조합 검색</li>
+              <li>조회범위 — 관리자 단일 권한이므로 전체 학생 조회(범위 제한 없음). 위 검색조건은 범위를 좁히는 용도이며 권한을 넓히는 값이 아니다</li>
+              <li class="em">향후 학교별 담당자처럼 조회범위가 제한되는 권한을 추가할 경우, 그 범위는 화면 입력값이 아니라 로그인 권한으로 서버에서 강제한다 — 화면에서 자유 입력으로 받으면 남의 학교 학생이 조회된다</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 검색 액션</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>새로고침 · 조회</li>
+              <li>[새로고침] = 검색조건 초기화 — 폼 기본 경로로 이동해 쿼리스트링(hidden 페이지·정렬 포함)을 모두 털어낸 최초 진입 상태로 되돌린다</li>
+              <li class="em">[새로고침]에 폼 reset 방식을 쓰지 않는다 — reset은 서버가 방금 렌더한 값(=직전 검색조건)으로만 되돌아가 조회 후에는 무동작으로 보이고, 페이지·정렬 값이 그대로 남는다</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 선택 학생 액션</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">액션 구성</div>
+            <table class="rqt"><tr><th>액션</th><th>대상</th></tr>
+              <tr><td>알림발송</td><td>선택 학생</td></tr>
+              <tr><td>그룹관리</td><td>선택 학생</td></tr>
+              <tr><td>그룹설정</td><td>선택 학생</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>목록 상단 고정 액션바 — 학생 목록이 있는 화면은 이 액션을 모두 노출하며, 다른 항목을 수정하다 일부만 남기지 않는다</li>
+              <li>액션바·선택 카운트·전체선택 동작은 공통 컴포넌트 1개를 재사용한다 — 화면별로 다시 구현하면 화면마다 일부 액션이 누락된다</li>
+              <li>표 헤더 전체선택 체크박스 + 행 체크박스 필수, 선택 인원은 "선택 N명"으로 실시간 표시</li>
+              <li>행 체크박스는 학생 식별자를 함께 보유해야 한다</li>
+              <li>중복 제거 키는 아이디(이메일) — 한 학생이 여러 행에 나오는 목록에서 중복 발송을 막는다</li>
+              <li>목록 전체를 대상으로 하는 기능(Excel 다운로드)은 이 액션바에 두지 않고 하단 유틸에 분리한다 — 같은 줄에 섞으면 선택 없이 전체가 발송되는 것으로 오인한다</li>
+              <li class="em">행 체크박스에 학생 식별자가 없으면 버튼은 보이는데 대상이 0명이 되는 무증상 고장이 된다</li>
+              <li class="em">알림발송 채널은 시스템 알림·이메일만 — SMS는 핸드폰 번호 미수집으로 미반영(회의록 2026-07-30)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">4</span> 학생 목록</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>선택 체크박스 · 구분(가입유형) · 이름 · 아이디(이메일) · 학교급 · 학교 · 학년 · 반 · 등록일 · 최근 접속일</li>
+              <li>첫 컬럼은 선택 체크박스, 헤더는 현재 페이지 전체선택 (3번 액션바와 연동)</li>
+              <li class="em">임의생성 학생은 이메일·이름·학교·학년만 필수, 나머지는 "－" 표시 (임의생성 학생은 로그인 이력이 없으면 최근 접속일도 "－")</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">5</span> 행 관리</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>[프로필] 클릭 시 학생 상세 정보 팝업 표시 (6번 참조)</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">6</span> 프로필 팝업</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>① 학생 기본정보 ② 총점수·영역별 점수·배지 이미지 ③ 비교과 프로그램 이수정보 — B.6 역량인증제관리 팝업과 동일 구성</li>
+              <li class="em">상담이력·학사정보 이력 없음 → 팝업에 미포함</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">7</span> 하단 유틸</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>Excel 다운로드 좌측 · 페이징 중앙</li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="bottom-3">
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>B.1</td></tr>
+          <tr><th>화면명</th><td>학생 조회</td></tr>
+          <tr><th>메뉴 경로</th><td>회원관리 &gt; 학생 조회</td></tr>
+          <tr><th>유형</th><td>조회 · 목록형</td></tr>
+          <tr><th>사용자</th><td>관리자</td></tr>
+          <tr><th>목적</th><td>전체 학생(시스템가입+임의생성) 통합 조회</td></tr>
+          <tr><th>연계</th><td>역량 인증제 관리(B.6) · B.8 사용자 관리</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>통합 조회</b>시스템가입 학생과 임의생성 학생을 하나의 목록에서 통합 조회</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>임의생성 학생 처리</b>이메일·이름·학교·학년만 필수, 나머지 항목은 "－" 표시</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>프로필 팝업</b>기본정보·총점수/영역별 점수·비교과 이수정보 (B.6과 동일 구성)</div></div>
+        <div class="stepline"><span class="tag ph-4">S4</span><div class="tx"><b>재학/휴학 미사용</b>초·중·고 체험 프로그램 특성상 학적 구분 없이 조회</div></div>
+        <div class="stepline"><span class="tag ph-1">S5</span><div class="tx"><b>선택 학생 액션</b>알림발송(이메일 채널)·그룹관리·그룹설정 고정 노출, 공통 컴포넌트 재사용 (Excel은 하단 유틸에 분리)</div></div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">재학/휴학 학적 구분 미사용 — 초·중·고 체험 프로그램 특성상 학생유형(시스템가입/임의생성) 2종으로만 구분. Excel 좌측 · 페이징 중앙.</div>
+        <div class="std-box">선택 학생 액션 고정 — 알림발송(이메일 채널)·그룹관리·그룹설정 — 일부만 남기지 않는다. 중복 제거 키는 아이디(이메일). [새로고침]은 폼 reset이 아니라 검색조건 초기화(쿼리스트링 제거).</div>
+        <div class="std-box">본 화면은 총괄관리자 전용이다 — 부서운영자는 접근 권한이 없으며, 등급권한은 B.8 사용자 관리에서 부여한다(로그인 권한 기준 서버단 차단).</div>
+        <div class="exc-box"><b>상담이력·학사정보 이력 없음</b> — 프로필 팝업에 미포함.</div>
+        <div class="exc-box"><b>SMS 채널 미반영</b> — 핸드폰 번호 미수집(회의록 2026-07-30). 알림발송은 시스템 알림·이메일 채널만 — 별도 [메일 발송] 버튼 미생성.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector(".doc");
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM), total = doc.scrollHeight;
+    var n = Math.max(1, Math.ceil(total / pageH));
+    if(n < 2) return;
+    var layer = document.createElement("div");
+    layer.className = "page-break-guide"; layer.style.height = total + "px";
+    for(var i = 1; i < n; i++){
+        var l = document.createElement("div");
+        l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+        layer.appendChild(l);
+    }
+    doc.appendChild(layer);
+})();
+</script>
+
+</body>
+</html>

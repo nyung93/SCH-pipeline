@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>A.5 프로그램 리스트</title>
+<style>
+:root{
+  --blue:#3899ca; --navy:#5b80bd; --sky:#60bddb; --green:#269e77;
+  --bg:#f4f6f6; --text:#26364f; --sub:#4a576c; --bd:#bdc1c9; --bd2:#e6e8eb; --red:#e50048;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Malgun Gothic','맑은 고딕',sans-serif;}
+body{background:#e9edf0;color:var(--text);font-size:11.5px;padding:14px;}
+.doc{width:297mm;margin:0 auto;position:relative;background:#fff;box-shadow:0 0 0 1px #d5d9dd;}
+
+.path-bar{display:flex;border:1px solid var(--bd);margin-bottom:8px;}
+.pb-label{background:var(--bg);padding:7px 15px;text-align:center;font-size:11.5px;border-right:1px solid var(--bd);flex-shrink:0;}
+.pb-value{padding:7px 14px;font-size:11.5px;display:flex;align-items:center;gap:8px;}
+.pb-value.grow{flex:1;} .pb-value .sep{color:#9aa3ae;font-size:11px;}
+.pb-right{display:flex;border-left:1px solid var(--bd);}
+.pb-right .pb-label{width:90px;} .pb-right .pb-value{width:120px;font-weight:bold;color:var(--navy);}
+
+.doc-body{display:flex;border:1px solid var(--bd);}
+.screen-area{flex:74;border-right:1px solid var(--bd);padding:9px 28px 16px 34px;position:relative;}
+.define-panel{flex:26;}
+.page-title-row{display:flex;align-items:center;gap:7px;padding:11px 2px 9px;}
+.page-title{font-size:16px;font-weight:bold;}
+
+.badge{position:absolute;left:-12px;width:21px;height:21px;border-radius:50%;background:var(--red);color:#fff;
+       font-size:11px;font-weight:bold;display:flex;align-items:center;justify-content:center;z-index:5;box-shadow:0 0 0 2px #fff;}
+.badge.right{left:auto;right:-8px;} .badge.nested{left:-26px;}
+
+.btn{border:none;border-radius:2px;font-size:11px;cursor:pointer;padding:5px 11px;color:#fff;display:inline-flex;align-items:center;gap:4px;}
+.btn-navy{background:var(--navy);} .btn-sky{background:var(--sky);} .btn-green{background:var(--green);}
+.btn-grey{background:#fff;color:var(--sub);border:1px solid var(--bd);}
+.btn-mini{padding:3px 8px;font-size:10.5px;}
+
+.filter-special{background:#fff;border:1px solid var(--bd2);padding:10px 14px;position:relative;}
+.ftable{width:100%;border-collapse:collapse;}
+.ftable td{padding:4px 0;vertical-align:middle;}
+.ftable td.lb{width:74px;font-size:11px;padding-right:6px;white-space:nowrap;}
+.ftable td.ct{padding-right:18px;width:24%;white-space:nowrap;}
+select,input[type=text],input[type=date],input[type=number],
+.filter-select,.mf-input{border:1px solid var(--bd);border-radius:2px;padding:3px 6px;font-size:11px;height:26px;background:#fff;color:var(--text);}
+.w-full{width:100%;} .w-half{width:calc(50% - 7px);}
+.search-act{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid var(--bd2);position:relative;}
+
+/* 행 액션 버튼 */
+.row-act{display:inline-flex;gap:4px;}
+
+.grid-wrap{position:relative;margin-top:14px;}
+.grid{width:100%;border-collapse:collapse;font-size:11px;border-top:2px solid var(--blue);}
+.grid th{background:var(--bg);color:var(--sub);font-weight:normal;padding:7px 6px;border-bottom:1px solid var(--bd2);text-align:center;}
+.grid th.sortable::after{content:' ↕';color:#a9b1ba;font-size:9px;}
+.grid td{padding:6px;text-align:center;border-bottom:1px solid #eef0f1;}
+.grid td.mn{text-align:left;}
+.grid .off{opacity:.5;}
+.tag{padding:1px 7px;border-radius:3px;font-size:10px;font-weight:bold;white-space:nowrap;}
+.t-open{background:#e8f0fe;color:#1a56c4;} .t-closed{background:#f0f2f3;color:#95a0ac;}
+.cap{font-size:10.5px;} .cap b{color:var(--navy);}
+.grid th.stnum{font-size:10px;padding:7px 4px;}
+.grid td.stnum{padding:6px 4px;}
+
+.bottom{display:flex;align-items:center;margin-top:12px;position:relative;}
+.pagination{display:flex;list-style:none;gap:2px;position:absolute;left:0;right:0;justify-content:center;}
+.pagination a{display:block;padding:4px 9px;border:1px solid var(--bd);background:#fff;color:var(--sub);text-decoration:none;font-size:11px;border-radius:2px;}
+.pagination li.active a{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+.dp-head{background:var(--bg);text-align:center;padding:8px;font-size:12.5px;font-weight:bold;border-bottom:1px solid var(--bd);}
+.dp-intro{padding:9px 11px;font-size:11px;line-height:1.5;border-bottom:1px solid var(--bd);}
+.dp-row{display:flex;border-bottom:1px solid var(--bd);}
+.dp-row:last-child{border-bottom:none;}
+.dp-num{width:38px;flex-shrink:0;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;border-right:1px solid var(--bd);}
+.dp-cont{flex:1;padding:8px 10px;}
+.dp-title{font-size:11.5px;font-weight:bold;margin-bottom:3px;}
+.dp-cont ul{list-style:none;}
+.dp-cont li{font-size:10.5px;line-height:1.42;padding-left:10px;position:relative;margin-bottom:1px;}
+.dp-cont li::before{content:'•';position:absolute;left:0;color:var(--sub);}
+.em{color:var(--red);}
+
+@page{ size:A4 landscape; margin:8mm; }
+@media print{ body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="path-bar">
+    <div class="pb-label">페이지 경로</div>
+    <div class="pb-value grow">비교과 프로그램 <span class="sep">›</span> 프로그램 지원자 관리 <span class="sep">›</span> 프로그램 리스트</div>
+    <div class="pb-right"><div class="pb-label">페이지</div><div class="pb-value">PAGE 1</div></div>
+  </div>
+
+  <div class="doc-body">
+    <div class="screen-area">
+      <div class="page-title-row"><span class="page-title">프로그램 리스트</span></div>
+
+      <!-- 1. 검색조건 -->
+      <div class="filter-special">
+        <div class="badge" style="top:11px;">1</div>
+        <table class="ftable">
+          <tr>
+            <td class="lb">프로그램</td>
+            <td class="ct"><input type="text" class="mf-input w-full" placeholder="프로그램명 검색"></td>
+            <td class="lb">차수</td>
+            <td class="ct"><select class="filter-select w-full"><option>전체 차수</option></select></td>
+            <td class="lb">상태</td>
+            <td class="ct"><select class="filter-select w-full"><option>전체</option><option>모집중</option><option>마감</option></select></td>
+          </tr>
+          <tr>
+            <td class="lb">신청일</td>
+            <td class="ct"><input type="date" class="mf-input w-half"> ~ <input type="date" class="mf-input w-half"></td>
+            <td class="lb">운영부서</td>
+            <td class="ct"><select class="filter-select w-full"><option>전체</option></select></td>
+            <td class="lb"></td><td class="ct"></td>
+          </tr>
+        </table>
+        <div class="search-act">
+          <div class="badge nested" style="top:11px;">2</div>
+          <button class="btn btn-grey">↻ 새로고침</button>
+          <button class="btn btn-navy">🔍 조회</button>
+        </div>
+      </div>
+
+      <!-- 3. 프로그램 목록 -->
+      <div class="grid-wrap">
+        <div class="badge" style="top:5px;">3</div>
+        <table class="grid">
+          <thead>
+            <tr>
+              <th rowspan="2" class="sortable" style="text-align:left;">프로그램명</th>
+              <th rowspan="2">구분</th>
+              <th rowspan="2">운영부서</th>
+              <th rowspan="2">담당자</th>
+              <th rowspan="2">모집 · 교육기간</th>
+              <th colspan="7">지원 현황</th>
+              <th rowspan="2" style="width:110px;">관리</th>
+            </tr>
+            <tr>
+              <th class="stnum">전체</th><th class="stnum">신청</th><th class="stnum">대기</th><th class="stnum">참여</th><th class="stnum">수료</th><th class="stnum">취소</th><th class="stnum">불참</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mn">AI 인공지능 기초 코딩 워크숍</td><td>진로체험</td><td>글로벌</td><td>홍길동</td>
+              <td>05-14 ~ 06-14</td>
+              <td class="stnum" style="font-weight:bold;">28</td>
+              <td class="stnum" style="color:var(--navy);">27</td>
+              <td class="stnum">0</td>
+              <td class="stnum">0</td>
+              <td class="stnum" style="color:#2e7d32;">0</td>
+              <td class="stnum" style="color:#c62828;">1</td>
+              <td class="stnum" style="color:#7c8896;">0</td>
+              <td>
+                <div class="badge right" style="top:-11px;">4</div>
+                <button class="btn btn-navy btn-mini">지원자 관리</button>
+              </td>
+            </tr>
+            <tr>
+              <td class="mn">나의 진로 설계: 꿈을 찾는 시간</td><td>진로설계</td><td>취업지원팀</td><td>김민지</td>
+              <td>05-20 ~ 06-10</td>
+              <td class="stnum" style="font-weight:bold;">15</td>
+              <td class="stnum" style="color:var(--navy);">10</td>
+              <td class="stnum">2</td>
+              <td class="stnum">1</td>
+              <td class="stnum" style="color:#2e7d32;">1</td>
+              <td class="stnum" style="color:#c62828;">1</td>
+              <td class="stnum" style="color:#7c8896;">0</td>
+              <td><button class="btn btn-navy btn-mini">지원자 관리</button></td>
+            </tr>
+            <tr>
+              <td class="mn">과학 탐구 동아리</td><td>과학탐구</td><td>학술지원팀</td><td>박서연</td>
+              <td>06-30 ~ 07-30</td>
+              <td class="stnum" style="font-weight:bold;">18</td>
+              <td class="stnum" style="color:var(--navy);">5</td>
+              <td class="stnum">0</td>
+              <td class="stnum">2</td>
+              <td class="stnum" style="color:#2e7d32;">10</td>
+              <td class="stnum" style="color:#c62828;">1</td>
+              <td class="stnum" style="color:#7c8896;">0</td>
+              <td><button class="btn btn-navy btn-mini">지원자 관리</button></td>
+            </tr>
+            <tr>
+              <td class="mn">창의 로봇 경진대회 예선</td><td>창의융합</td><td>산학협력팀</td><td>이도현</td>
+              <td>06-10 ~ 06-10</td>
+              <td class="stnum" style="font-weight:bold;">24</td>
+              <td class="stnum" style="color:var(--navy);">24</td>
+              <td class="stnum">0</td>
+              <td class="stnum">0</td>
+              <td class="stnum" style="color:#2e7d32;">0</td>
+              <td class="stnum" style="color:#c62828;">0</td>
+              <td class="stnum" style="color:#7c8896;">0</td>
+              <td><button class="btn btn-navy btn-mini">지원자 관리</button></td>
+            </tr>
+            <tr class="off">
+              <td class="mn">인성교육 워크숍</td><td>인성교육</td><td>대학일자리플러스센터</td><td>최유진</td>
+              <td>07-18 ~ 07-18</td>
+              <td class="stnum" style="font-weight:bold;">12</td>
+              <td class="stnum" style="color:var(--navy);">0</td>
+              <td class="stnum">0</td>
+              <td class="stnum">0</td>
+              <td class="stnum" style="color:#2e7d32;">12</td>
+              <td class="stnum" style="color:#c62828;">0</td>
+              <td class="stnum" style="color:#7c8896;">0</td>
+              <td><button class="btn btn-navy btn-mini">지원자 관리</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 하단 유틸 -->
+      <div class="bottom">
+        <div class="badge" style="top:2px;">5</div>
+        <button class="btn btn-green">Excel 다운로드</button>
+        <ul class="pagination">
+          <li><a href="#">&lt;</a></li>
+          <li class="active"><a href="#">1</a></li>
+          <li><a href="#">2</a></li>
+          <li><a href="#">&gt;</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 우 : 화면 정의 -->
+    <div class="define-panel">
+      <div class="dp-head">화면 정의</div>
+      <div class="dp-intro">
+        전체 비교과 프로그램을 조회하고, 특정 프로그램의 <b>지원자 관리</b> 화면으로 진입하는 관리자용 목록 화면.
+        A.2 지원자 관리 화면의 진입점.
+      </div>
+
+      <div class="dp-row"><div class="dp-num">1</div><div class="dp-cont">
+        <div class="dp-title">검색조건</div>
+        <ul>
+          <li>프로그램(명 검색) · 차수 · 상태 · 신청일 · 운영부서</li>
+          <li class="em">기존 A.2 '특화 검색' 조건을 그대로 반영</li>
+        </ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">2</div><div class="dp-cont">
+        <div class="dp-title">검색 액션</div>
+        <ul><li>새로고침 · 조회</li></ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">3</div><div class="dp-cont">
+        <div class="dp-title">프로그램 목록</div>
+        <ul>
+          <li>프로그램명 · 구분 · 운영부서 · 담당자 · 모집·교육기간</li>
+          <li><b>지원 현황</b> : 전체 · 신청 · 대기 · 참여 · 수료 · 취소 · 불참 인원수를 프로그램별로 표시</li>
+          <li class="em">A.2 지원자 관리의 상태 집계 카드와 동일한 7개 항목으로 반영</li>
+        </ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">4</div><div class="dp-cont">
+        <div class="dp-title">행 관리</div>
+        <ul>
+          <li>[지원자 관리] 클릭 시 해당 프로그램의 A.2 지원자 관리 화면으로 이동</li>
+          <li class="em">이동 후 화면 타이틀은 선택한 프로그램명으로 표시</li>
+        </ul></div></div>
+
+      <div class="dp-row"><div class="dp-num">5</div><div class="dp-cont">
+        <div class="dp-title">하단 유틸</div>
+        <ul><li>Excel 다운로드 좌측 · 페이징 중앙</li></ul></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector('.doc');
+    function mmToPx(mm){var p=document.createElement('div');p.style.cssText='position:absolute;visibility:hidden;height:'+mm+'mm;width:0;';document.body.appendChild(p);var px=p.getBoundingClientRect().height;document.body.removeChild(p);return px;}
+    var pageH=mmToPx(PAGE_H_MM-PRINT_MARGIN_MM),total=doc.scrollHeight;
+    var n=Math.max(1,Math.ceil(total/pageH));
+    if(n<2)return;
+    var layer=document.createElement('div');layer.className='page-break-guide';layer.style.height=total+'px';
+    for(var i=1;i<n;i++){var l=document.createElement('div');l.className='pbg-line';l.style.top=(pageH*i)+'px';layer.appendChild(l);}
+    doc.appendChild(layer);
+})();
+</script>
+</body>
+</html>

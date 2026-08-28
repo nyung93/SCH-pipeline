@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>비교과 프로그램 통계</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-num.page-right{ margin-left:auto; flex-shrink:0; align-self:center; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+.rq{ margin-bottom:11px; }
+.rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px; display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; }
+.rq li.em::before{ color:#c62828; }
+
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; }
+.rqt.spec th:first-child{ width:66px; }
+
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; }
+.btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-success{ background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.btn-lg{ height:30px; padding:5px 18px; font-size:12px; }
+
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+.w-full{ width:100%; }
+
+.cg{ display:grid; grid-template-columns:82px 1fr 82px 1fr 82px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .lb:nth-last-child(-n+6), .cg .vl:nth-last-child(-n+6){ border-bottom:none; }
+
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+
+.stat-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:11px; }
+.stat-card{ background:#f8f8f8; border-radius:6px; padding:9px 11px; }
+.stat-card .label{ font-size:10.5px; color:#888; line-height:1.4; }
+.stat-card .val{ font-size:20px; font-weight:700; margin-top:3px; line-height:1.2; }
+
+.area{ display:grid; grid-template-columns:70px 1fr 54px; align-items:center; gap:10px; margin:7px 0; font-size:11px; }
+.area .an{ font-weight:600; color:#555; }
+.area .bar{ height:16px; border-radius:8px; background:#eef1f4; overflow:hidden; }
+.area .bar i{ display:block; height:100%; border-radius:8px; }
+.area .cnt{ text-align:right; font-weight:700; }
+.a-cr i{ background:#1a73e8; } .a-em i{ background:#2e7d32; } .a-gl i{ background:#6a1b9a; }
+
+.ct{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.ct th{ background:#f8f8f8; padding:6px 5px; text-align:center; font-weight:600;
+  border-bottom:1px solid #e0e0e0; white-space:nowrap; color:#555; line-height:1.4; }
+.ct td{ padding:6px 5px; border-bottom:1px solid #eee; text-align:center; white-space:nowrap; line-height:1.4; }
+.ct tr:last-child td{ border-bottom:none; }
+.ct td.nm{ text-align:left; }
+
+.bottom-bar{ position:relative; display:flex; align-items:center; margin-top:11px; }
+.pager{ position:absolute; left:0; right:0; display:flex; justify-content:center; gap:3px; list-style:none; }
+.pager a{ display:block; padding:4px 9px; border:1px solid #ddd; border-radius:4px;
+  background:#fff; color:#666; text-decoration:none; font-size:10.5px; line-height:1.4; }
+.pager li.on a{ background:#1a73e8; color:#fff; border-color:#1a73e8; }
+
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; } .ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; } .ph-4{ background:#e8f5e9; color:#2e7d32; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; } .stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec; border-radius:5px; margin-top:5px; line-height:1.5; }
+.exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe; border-radius:5px; margin-top:5px; line-height:1.5; }
+.std-box:first-child{ margin-top:0; }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb"><span class="page-num strong">화면 3.2</span></div>
+    <div>
+      <div class="page-title">비교과 프로그램 통계</div>
+      <div class="page-desc">연간 실시 현황 및 영역별(창의·공감·글로벌) 운영현황을 집계·조회하는 관리자 대시보드. (회의록 2-4) 이번 개정 — 검색조건 프로그램구분을 운영형태(일반참여형/심화 실습형)로 변경, 다면적역량 검색조건 추가.</div>
+    </div>
+    <span class="page-num page-right">PAGE 1</span>
+  </div>
+
+  <div class="layout">
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 검색 조건</div>
+        <div class="grp-body">
+          <div class="cg">
+            <div class="lb">연도 / 학기</div>
+            <div class="vl"><select class="filter-select" style="flex:1"><option>2026</option></select><select class="filter-select" style="flex:1"><option>전체</option><option>1학기</option><option>2학기</option></select></div>
+            <div class="lb">운영부서</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option></select></div>
+            <div class="lb">운영형태</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>일반참여형</option><option>심화 실습형</option></select></div>
+
+            <div class="lb">학교급</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>초</option><option>중</option><option>고</option></select></div>
+            <div class="lb" style="border-bottom:1px solid #eee;">실시기간</div>
+            <div class="vl" style="flex-wrap:nowrap;border-bottom:1px solid #eee;"><input class="mf-input" type="date" style="flex:1;min-width:0"><span>~</span><input class="mf-input" type="date" style="flex:1;min-width:0"></div>
+            <div class="lb" style="border-bottom:1px solid #eee;">프로그램명</div>
+            <div class="vl" style="border-bottom:1px solid #eee;"><input class="mf-input w-full" placeholder="검색어"></div>
+
+            <div class="lb">다면적역량</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>창의</option><option>공감</option><option>글로벌</option></select></div>
+          </div>
+          <div class="search-act"><button class="btn btn-outline">↻ 새로고침</button><button class="btn btn-primary">🔍 조회</button></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 연간 실시 현황 요약 <span class="tail">영역별 운영현황</span></div>
+        <div class="grp-body">
+          <div class="stat-cards">
+            <div class="stat-card"><div class="label">운영 프로그램</div><div class="val" style="color:#1a73e8">42건</div></div>
+            <div class="stat-card"><div class="label">총 신청 인원</div><div class="val">1,280명</div></div>
+            <div class="stat-card"><div class="label">수료 인원</div><div class="val" style="color:#2e7d32">1,046명</div></div>
+            <div class="stat-card"><div class="label">취소 인원</div><div class="val" style="color:#c62828">58명</div></div>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:#555;margin:4px 0 4px;">영역별 운영현황</div>
+          <div class="area a-cr"><span class="an">창의</span><span class="bar"><i style="width:72%"></i></span><span class="cnt">18건</span></div>
+          <div class="area a-em"><span class="an">공감</span><span class="bar"><i style="width:56%"></i></span><span class="cnt">14건</span></div>
+          <div class="area a-gl"><span class="an">글로벌</span><span class="bar"><i style="width:40%"></i></span><span class="cnt">10건</span></div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 프로그램별 실시 현황</div>
+        <div class="grp-body">
+          <table class="ct">
+            <thead><tr><th>운영부서</th><th style="text-align:left;">프로그램명</th><th>영역</th><th>차수</th><th>신청</th><th>수료</th><th>취소</th><th>수료율</th><th>만족도</th></tr></thead>
+            <tbody>
+              <tr><td>창의</td><td class="nm">AI 인공지능 기초 코딩 워크숍</td><td>창의</td><td>2</td><td>40</td><td>36</td><td>2</td><td>90%</td><td>4.6</td></tr>
+              <tr><td>글로벌</td><td class="nm">나의 진로 설계: 꿈을 찾는 시간</td><td>글로벌</td><td>1</td><td>26</td><td>22</td><td>1</td><td>85%</td><td>4.4</td></tr>
+              <tr><td>공감</td><td class="nm">인성교육 워크숍</td><td>공감</td><td>1</td><td>30</td><td>28</td><td>0</td><td>93%</td><td>4.7</td></tr>
+              <tr><td>창의</td><td class="nm">창의 로봇 경진대회 예선</td><td>창의</td><td>3</td><td>48</td><td>41</td><td>3</td><td>85%</td><td>4.5</td></tr>
+            </tbody>
+          </table>
+          <div class="bottom-bar">
+            <button class="btn btn-success btn-lg">⤓ Excel 다운로드</button>
+            <ul class="pager"><li><a href="#">&lt;</a></li><li class="on"><a href="#">1</a></li><li><a href="#">2</a></li><li><a href="#">&gt;</a></li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 검색 조건</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>타입</th></tr>
+              <tr><td>연도/학기(실시기간)</td><td>select/date</td></tr>
+              <tr><td>운영부서</td><td>select</td></tr>
+              <tr><td>운영형태·학교급</td><td>select</td></tr>
+              <tr><td>다면적역량</td><td>select</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li class="em">검색조건 : 연도/학기(실시기간) · 운영부서 (회의록)</li>
+              <li class="em">프로그램구분 항목은 운영형태(일반참여형/심화 실습형)로 대체</li>
+              <li class="em">다면적역량(창의/공감/글로벌) 검색조건 추가</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 실시 현황 요약</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>연간 실시 현황 집계</li><li class="em">영역별(창의·공감·글로벌) 운영현황 조회</li><li>대시보드 차트로 표현</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 프로그램별 현황</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>프로그램별 신청·수료·취소 인원 집계</li><li>수료율·만족도 표시</li><li>Excel 다운로드 제공</li></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-3">
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>3.2</td></tr>
+          <tr><th>화면명</th><td>비교과 프로그램 통계</td></tr>
+          <tr><th>메뉴 경로</th><td>비교과 프로그램 &gt; 통계</td></tr>
+          <tr><th>유형</th><td>조회 · 대시보드</td></tr>
+          <tr><th>사용자</th><td>관리자 · 부서운영자</td></tr>
+          <tr><th>목적</th><td>연간·영역별 운영현황 집계</td></tr>
+          <tr><th>연계</th><td>프로그램 등록 · 신청자 관리</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>연도/학기·운영부서 검색</b>실시기간 기준 조회</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>영역별 운영현황</b>창의·공감·글로벌 3영역 집계</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>대시보드 차트</b>신청·수료·취소 시각화</div></div>
+        <div class="stepline"><span class="tag ph-4">S4</span><div class="tx"><b>Excel 다운로드</b>집계 결과 내보내기</div></div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">영역 구분은 <b>창의 · 공감 · 글로벌</b> 3종 기준. Excel 좌측 · 페이징 중앙.</div>
+        <div class="exc-box"><b>SMS 발송 미반영</b> — 핸드폰 번호 미수집(회의록).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector(".doc");
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM), total = doc.scrollHeight;
+    var n = Math.max(1, Math.ceil(total / pageH));
+    if(n < 2) return;
+    var layer = document.createElement("div");
+    layer.className = "page-break-guide"; layer.style.height = total + "px";
+    for(var i = 1; i < n; i++){
+        var l = document.createElement("div");
+        l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+        layer.appendChild(l);
+    }
+    doc.appendChild(layer);
+})();
+</script>
+
+</body>
+</html>

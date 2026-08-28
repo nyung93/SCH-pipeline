@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B.9. 역량인증이력관리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+/* A4 가로(297mm) 인쇄 전용 고정폭 */
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+.doc + .doc{ margin-top:16px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+/* 페이지 헤더 : 회색 캡 */
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-num.on{ background:#1a73e8; color:#fff; }
+.page-num.page-right{ margin-left:auto; flex-shrink:0; align-self:center; }
+.crumb-sep{ color:#bbb; font-size:12px; font-weight:700; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+/* 2단 레이아웃 */
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+/* 캡 그룹 */
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-cap .new{ background:#e8f0fe; color:#1a73e8; font-size:10px; padding:1px 8px; border-radius:8px; font-weight:700; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+/* 그룹 내 하위 구분 */
+.sub{ margin-bottom:11px; }
+.sub:last-child{ margin-bottom:0; }
+.sub-cap{ display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; color:#666; margin-bottom:6px; }
+.sub-cap .mark{ background:#eee; color:#888; font-size:10.5px; font-weight:700;
+  padding:2px 8px; border-radius:4px; white-space:nowrap; }
+.sub-cap .mark.spec{ background:#e8f0fe; color:#1a73e8; }
+.sub-cap .icon{ width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.sub-cap .tail{ margin-left:auto; font-size:10.5px; font-weight:500; color:#aaa; }
+
+/* 우측 정의 프레임 */
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+/* 요구사항 블록 */
+.rq{ margin-bottom:11px; }
+.rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px;
+  display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq p{ font-size:11px; line-height:1.5; color:#333; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; }
+.rq li.em::before{ color:#c62828; }
+
+/* 요구사항 표 */
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; }
+.rqt .c{ text-align:center; }
+.rqt .yes{ color:#c62828; font-weight:700; text-align:center; }
+.rqt .no{ color:#ccc; text-align:center; }
+.rqt.spec th:first-child{ width:66px; }
+
+/* 버튼 */
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; }
+.btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-success{ background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+.btn-danger { background:#fce4ec; color:#c62828; border:1px solid #ef9a9a; }
+.btn-lg{ height:30px; padding:5px 18px; font-size:12px; }
+.btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+.btn[disabled]{ background:#f0f0f0; color:#bbb; border:1px solid #e0e0e0; cursor:not-allowed; }
+
+/* 폼 요소 */
+.filter-select{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 7px;
+  font-size:11px; color:#333; min-width:0; height:26px; font-family:inherit; line-height:1.4; }
+.mf-input{ background:#f8f8f8; border:1px solid #ddd; border-radius:4px; padding:4px 8px;
+  font-size:11px; height:26px; font-family:inherit; line-height:1.4; }
+textarea.mf-input{ height:auto; min-height:58px; width:100%; resize:vertical; line-height:1.6; }
+.charcnt{ text-align:right; font-size:10.5px; color:#aaa; margin-top:3px; }
+.upload{ display:flex; align-items:center; gap:8px; font-size:10.5px; color:#aaa; }
+.help-txt{ font-size:10.5px; color:#888; line-height:1.4; }
+.req{ color:#c62828; margin-left:2px; }
+.w-full{ width:100%; }
+
+/* 세그먼트 / 스위치 / 체크 */
+.seg{ display:inline-flex; border:1px solid #ddd; border-radius:4px; overflow:hidden; }
+.seg span{ padding:4px 14px; font-size:11px; color:#666; background:#fff; border-left:1px solid #eee; }
+.seg span:first-child{ border-left:none; }
+.seg span.on{ background:#1a73e8; color:#fff; font-weight:600; }
+.sw{ display:inline-flex; border:1px solid #ddd; border-radius:13px; overflow:hidden; font-size:11px; }
+.sw span{ padding:3px 13px; }
+.sw .on{ background:#e8f0fe; color:#1a73e8; font-weight:600; }
+.sw .off{ background:#fff; color:#bbb; }
+.check-group{ display:flex; gap:14px; flex-wrap:wrap; }
+.check-item{ display:inline-flex; align-items:center; gap:5px; font-size:11px; line-height:1.4; }
+.check-box{ width:14px; height:14px; border:1px solid #ccc; border-radius:3px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:9px; flex-shrink:0; color:#1a73e8; background:#fff; }
+.check-box.on{ background:#e8f0fe; border-color:#90caf9; }
+
+/* 라벨-값 그리드 : 기본 3쌍/행(검색) · .form 은 2열(입력폼) */
+.cg{ display:grid; grid-template-columns:78px 1fr 78px 1fr 78px 1fr; gap:0; font-size:11px;
+  border:1px solid #e0e0e0; border-radius:6px; overflow:hidden; }
+.cg.form{ grid-template-columns:124px 1fr; }
+.cg .lb{ background:#f8f8f8; padding:7px 9px; font-weight:600; border-bottom:1px solid #e0e0e0;
+  display:flex; align-items:center; color:#555; line-height:1.4; white-space:nowrap; }
+.cg .vl{ padding:7px 9px; border-bottom:1px solid #eee; line-height:1.5;
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.cg .vl.col{ display:block; }
+.cg:not(.form) .lb:nth-last-child(-n+6), .cg:not(.form) .vl:nth-last-child(-n+6){ border-bottom:none; }
+.cg.form .lb:nth-last-child(2), .cg.form .vl:last-child{ border-bottom:none; }
+.cg.form .lb{ white-space:normal; }
+.cg.common .vl{ background:#fafafa; }
+
+/* 검색 액션 */
+.search-act{ display:flex; justify-content:flex-end; gap:6px; margin-top:10px; }
+
+.bulk-bar{ display:flex; align-items:center; gap:6px; padding:7px 9px; background:#f8fbff;
+  border:1px solid #cfe2f7; border-radius:6px; }
+.bulk-bar .sel-count{ font-size:11px; color:#1a73e8; font-weight:700; margin-right:auto; }
+.bulk-bar .sel-count b{ font-size:12.5px; }
+.chk{ width:12px; height:12px; vertical-align:middle; accent-color:#1a73e8; margin:0; }
+
+/* 차수 · 정책 미니 테이블 */
+.cha{ width:100%; border-collapse:collapse; font-size:10.5px; margin-top:8px; }
+.cha th{ background:#f8f8f8; padding:5px 6px; border:1px solid #eee; color:#555; font-weight:600; }
+.cha td{ padding:5px 6px; border:1px solid #eee; text-align:center; }
+
+/* 규칙 박스 */
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec;
+  border-radius:5px; margin-top:5px; line-height:1.5; }
+.exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe;
+  border-radius:5px; margin-top:5px; line-height:1.5; }
+.std-box:first-child{ margin-top:0; }
+
+/* 특화 기능 요약 */
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px;
+  border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; }
+.ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; }
+.ph-4{ background:#e8f5e9; color:#2e7d32; }
+.ph-5{ background:#fce4ec; color:#c2185b; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; }
+.stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+
+/* 통계 카드 / 영역 막대 (B.5 공통) */
+.stat-cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:11px; }
+.stat-card{ background:#f8f8f8; border-radius:6px; padding:9px 11px; }
+.stat-card .label{ font-size:10.5px; color:#888; line-height:1.4; }
+.stat-card .val{ font-size:20px; font-weight:700; margin-top:3px; line-height:1.2; }
+.area{ display:grid; grid-template-columns:70px 1fr 54px; align-items:center; gap:10px; margin:7px 0; font-size:11px; }
+.area .an{ font-weight:600; color:#555; }
+.area .bar{ height:16px; border-radius:8px; background:#eef1f4; overflow:hidden; }
+.area .bar i{ display:block; height:100%; border-radius:8px; }
+.area .cnt{ text-align:right; font-weight:700; }
+.a-cr i{ background:#1a73e8; } .a-em i{ background:#2e7d32; } .a-gl i{ background:#6a1b9a; }
+
+/* 목록 표 (B.5 공통) */
+.ct{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.ct th{ background:#f8f8f8; padding:6px 5px; text-align:center; font-weight:600;
+  border-bottom:1px solid #e0e0e0; white-space:nowrap; color:#555; line-height:1.4; }
+.ct td{ padding:6px 5px; border-bottom:1px solid #eee; text-align:center; white-space:nowrap; line-height:1.4; }
+.ct tr:last-child td{ border-bottom:none; }
+.ct td.nm{ text-align:left; }
+.ct tr.off{ opacity:.55; }
+.ct tr.off td{ text-decoration:line-through; }
+.tag{ padding:1px 7px; border-radius:3px; font-size:9.5px; font-weight:700; white-space:nowrap; display:inline-block; }
+.tag.t-done{ background:#e8f5e9; color:#2e7d32; }
+.tag.t-canc{ background:#fce4ec; color:#c62828; }
+
+.bottom-bar{ position:relative; display:flex; align-items:center; margin-top:11px; }
+.pager{ position:absolute; left:0; right:0; display:flex; justify-content:center; gap:3px; list-style:none; }
+.pager a{ display:block; padding:4px 9px; border:1px solid #ddd; border-radius:4px;
+  background:#fff; color:#666; text-decoration:none; font-size:10.5px; line-height:1.4; }
+.pager li.on a{ background:#1a73e8; color:#fff; border-color:#1a73e8; }
+
+/* B.6 전용 보강 : 영역 점수 색상 · 배지 메달 · 조문 인용 박스 */
+.pt-cr{ color:#1a73e8; font-weight:700; }
+.pt-em{ color:#2e7d32; font-weight:700; }
+.pt-gl{ color:#6a1b9a; font-weight:700; }
+.area-dot{ width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:4px; vertical-align:middle; }
+.dot-cr{ background:#1a73e8; } .dot-em{ background:#2e7d32; } .dot-gl{ background:#6a1b9a; }
+.badge-med{ width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+  font-size:10px; color:#fff; margin-right:3px; vertical-align:middle; }
+.bm-silver{ background:radial-gradient(circle at 35% 30%,#e9edf1,#aab4bf); border:1px solid #cfd6dd; color:#5a6472; }
+.bm-gold{ background:radial-gradient(circle at 35% 30%,#ffe08a,#e0a92e); border:1px solid #f2cf6b; color:#7a5a10; }
+.bm-none{ background:#eef0f1; border:1px dashed #cfd4d9; color:#c2c8cf; }
+.law-box{ font-size:10.5px; color:#333; padding:9px 11px; background:#f8f8f8; border:1px solid #e0e0e0;
+  border-radius:6px; line-height:1.7; }
+.law-box .lt{ font-weight:700; color:#1a73e8; margin-bottom:4px; }
+.law-box .ind{ padding-left:14px; }
+
+.popup-preview{ margin-top:9px; padding:10px 12px; border:1px dashed #90caf9; border-radius:8px;
+  background:#f8fbff; position:relative; }
+.popup-preview .pt{ font-size:11px; font-weight:700; color:#1a73e8; margin-bottom:6px; }
+.popup-preview .cha, .popup-preview .law-box{ background:#fff; }
+.popup-preview .cha th{ background:#f8f8f8; }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb"><span class="page-num strong">화면 B.9</span></div>
+    <div><div class="page-title">역량인증이력관리</div><div class="page-desc">학생이 비교과 프로그램 이수를 통해 <b>인증받은 역량점수</b>를 <b>이수 건별로</b> 조회하는 화면(역량개발 &gt; 역량 인증제 관리 &gt; 역량인증이력관리). B.6 역량 인증제 관리는 학생별 <b>총점수 집계</b> 기준이지만, 본 화면은 한 학생이 이수한 프로그램마다 한 행씩 표시하는 <b>이력(로그) 조회</b> 화면이다 — B.6의 검색조건·선택 학생 액션을 그대로 재사용하고 목록만 이력 단위로 재구성했다(2026-08-27 신설).</div></div>
+    <span class="page-num page-right">PAGE 1</span>
+  </div>
+
+  <div class="layout">
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 검색조건</div>
+        <div class="grp-body">
+          <div class="cg">
+            <div class="lb">학교급</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>초등학교</option><option>중학교</option><option>고등학교</option></select></div>
+            <div class="lb">학년</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>1학년</option><option>2학년</option><option>3학년</option></select></div>
+            <div class="lb">이름/아이디</div>
+            <div class="vl"><input class="mf-input w-full" placeholder="이름 또는 아이디 검색"></div>
+            <div class="lb">다면적 역량</div>
+            <div class="vl"><select class="filter-select w-full"><option>전체</option><option>창의</option><option>공감</option><option>글로벌</option></select></div>
+            <div class="lb">프로그램명</div>
+            <div class="vl"><input class="mf-input w-full" placeholder="프로그램명 검색"></div>
+            <div class="lb">이수일</div>
+            <div class="vl" style="flex-wrap:nowrap;grid-column:2 / -1;"><input class="mf-input" type="date" style="width:110px;flex:none;"><span>~</span><input class="mf-input" type="date" style="width:110px;flex:none;"></div>
+          </div>
+          <div class="search-act">
+            <button class="btn btn-outline">↻ 새로고침</button>
+            <button class="btn btn-primary">🔍 조회</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 선택 학생 액션 <span class="tail">고정 — 임의 제거 금지</span></div>
+        <div class="grp-body">
+          <div class="bulk-bar">
+            <span class="sel-count">선택 <b>0</b>명</span>
+            <button class="btn btn-outline btn-mini">🔔 알림발송</button>
+            <button class="btn btn-outline btn-mini">👥 그룹관리</button>
+            <button class="btn btn-outline btn-mini">⚙ 그룹설정</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 역량인증이력 목록 <span class="tail">이수 6건 · 취소 1건 포함 7행</span></div>
+        <div class="grp-body">
+          <div class="help-txt" style="margin-bottom:6px;">인증 이력과 취소 이력을 각각 별도 행으로 함께 표시 — 취소된 건도 삭제하지 않고 원본 인증 행은 그대로 두고 취소 행을 추가로 남긴다(취소 행은 회색 처리·취소선)</div>
+          <table class="ct">
+            <thead>
+              <tr>
+                <th style="width:26px;"><input type="checkbox" class="chk" title="전체 선택"></th>
+                <th style="text-align:left;">이름</th><th>아이디</th><th>학교급</th><th>학교</th><th>학년</th>
+                <th style="text-align:left;">프로그램명</th><th style="white-space:normal;width:48px;line-height:1.3;">다면적<br>역량</th><th>점수</th><th>구분</th><th>처리일</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td class="nm">김서준</td><td class="nm">sjkim01@sch.ac.kr</td><td>초등학교</td><td>순천향초</td><td>5</td>
+                <td class="nm" style="white-space:normal;max-width:150px;">AI 인공지능 기초 코딩 워크숍</td><td><span class="area-dot dot-cr"></span>창의</td><td style="font-weight:700;">7점</td><td><span class="tag t-done">인증</span></td><td>2026-06-14</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td class="nm">김서준</td><td class="nm">sjkim01@sch.ac.kr</td><td>초등학교</td><td>순천향초</td><td>5</td>
+                <td class="nm" style="white-space:normal;max-width:150px;">과학 탐구 동아리</td><td><span class="area-dot dot-cr"></span>창의</td><td style="font-weight:700;">5점</td><td><span class="tag t-done">인증</span></td><td>2026-08-30</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td class="nm">김서준</td><td class="nm">sjkim01@sch.ac.kr</td><td>초등학교</td><td>순천향초</td><td>5</td>
+                <td class="nm" style="white-space:normal;max-width:150px;">인성교육 워크숍</td><td><span class="area-dot dot-em"></span>공감</td><td style="font-weight:700;">8점</td><td><span class="tag t-done">인증</span></td><td>2026-07-18</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td class="nm">이하은</td><td class="nm">haeun.lee02@sch.ac.kr</td><td>중학교</td><td>순천향중</td><td>2</td>
+                <td class="nm" style="white-space:normal;max-width:150px;">나의 진로 설계: 꿈을 찾는 시간</td><td><span class="area-dot dot-gl"></span>글로벌</td><td style="font-weight:700;">5점</td><td><span class="tag t-done">인증</span></td><td>2026-06-10</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td class="nm">이하은</td><td class="nm">haeun.lee02@sch.ac.kr</td><td>중학교</td><td>순천향중</td><td>2</td>
+                <td class="nm" style="white-space:normal;max-width:150px;">글로벌 문화체험 캠프</td><td><span class="area-dot dot-gl"></span>글로벌</td><td style="font-weight:700;">12점</td><td><span class="tag t-done">인증</span></td><td>2026-08-22</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="chk"></td>
+                <td class="nm">박도윤</td><td class="nm">dypark03@sch.ac.kr</td><td>고등학교</td><td>순천향고</td><td>1</td>
+                <td class="nm" style="white-space:normal;max-width:150px;">공감 리더십 캠프</td><td><span class="area-dot dot-em"></span>공감</td><td style="font-weight:700;">3점</td><td><span class="tag t-done">인증</span></td><td>2026-08-27</td>
+              </tr>
+              <tr class="off">
+                <td><input type="checkbox" class="chk"></td>
+                <td class="nm">박도윤</td><td class="nm">dypark03@sch.ac.kr</td><td>고등학교</td><td>순천향고</td><td>1</td>
+                <td class="nm" style="white-space:normal;max-width:150px;">공감 리더십 캠프</td><td><span class="area-dot dot-em"></span>공감</td><td style="font-weight:700;">3점</td><td><span class="tag t-canc">취소</span></td><td>2026-08-29</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">4</span> 하단 유틸</div>
+        <div class="grp-body">
+          <div class="bottom-bar" style="margin-top:0;">
+            <button class="btn btn-success btn-lg">⤓ Excel 다운로드</button>
+            <ul class="pager"><li><a href="#">&lt;</a></li><li class="on"><a href="#">1</a></li><li><a href="#">2</a></li><li><a href="#">&gt;</a></li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 검색조건</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">입력 항목</div>
+            <table class="rqt"><tr><th>항목</th><th>타입</th></tr>
+              <tr><td>학교급</td><td>select</td></tr>
+              <tr><td>학년</td><td>select</td></tr>
+              <tr><td>이름/아이디</td><td>text</td></tr>
+              <tr><td>다면적 역량</td><td>select</td></tr>
+              <tr><td>프로그램명</td><td>text</td></tr>
+              <tr><td>이수일(기간)</td><td>date range</td></tr>
+            </table>
+          </div>
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>학교급·학년·이름/아이디·다면적역량은 B.6 검색조건을 그대로 재사용</li>
+              <li>프로그램명(텍스트 검색)을 신규 추가</li>
+              <li>이수일(시작~종료) 기간 검색은 본 화면 신규 추가 — 이력(로그) 조회 화면 특성상 기간 단위 조회가 필요, 두 날짜 입력은 한 줄로 배치(줄바꿈 금지)</li>
+              <li>[새로고침] = 검색조건 초기화(쿼리스트링 제거) — 폼 reset 방식 금지, 공통 규칙과 동일</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 선택 학생 액션</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>학생 목록이 있는 관리자 화면 표준 — 알림발송·그룹관리·그룹설정 3종 고정 노출(B.1·B.4·B.6과 동일 컴포넌트 재사용)</li>
+              <li>한 학생이 여러 이수 건(행)으로 중복 노출될 수 있으므로 중복 제거 키는 아이디(이메일) — 동일 학생을 여러 행에서 선택해도 발송은 1회만 처리</li>
+              <li class="em">알림발송 채널은 시스템 알림·이메일만 — SMS는 핸드폰 미수집으로 미반영(회의록 2026-07-30)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 역량인증이력 목록</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>한 행 = 학생 1명이 프로그램 1건을 이수하고 역량점수를 인증(또는 취소)받은 이력 — 학생별 집계가 아닌 <b>이수 건별 1행</b></li>
+              <li>컬럼 순서 : 선택 체크박스 → <b>이름</b>(최우선 식별) → 아이디 → 학교급 → 학교 → 학년 → 프로그램명 → 다면적 역량 → 점수 → <b>구분</b> → <b>처리일</b>(최후미)</li>
+              <li class="em">인증 이력과 취소 이력을 동시에 표시 — 취소되어도 원본 인증 행은 삭제하지 않고 그대로 두고, 취소 행을 별도로 추가해 함께 노출(구분 태그 : 인증/취소, 처리일은 각 이력이 발생한 날짜)</li>
+              <li>취소 행은 회색 처리·취소선으로 구분(다른 화면의 취소 상태 표시와 동일 컨벤션) — 정렬은 동일 학생·프로그램 기준으로 인증 행 바로 아래 취소 행이 오도록 처리일 오름차순</li>
+              <li>학교(학교명)는 학교급과 별도 컬럼으로 노출 — B.1·B.6과 동일하게 학교급만으로는 특정할 수 없는 소속 학교를 함께 표시</li>
+              <li>다면적 역량 컬럼은 B.6과 동일한 영역 dot(파랑=창의/초록=공감/보라=글로벌)으로 구분 표시</li>
+              <li class="em">점수는 해당 이수 건에서 취득한 개별 역량점수 — B.6의 학생별 총점수(3영역 합산)와는 다른 값이니 혼동 금지. 취소 행의 점수는 취소된 원 점수를 그대로 표기(음수 표기 아님)</li>
+              <li class="em">취소 처리 시 B.6 학생별 총점수·배지 등급 재계산에 반영 — 취소분 점수는 총점수 집계에서 제외</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">4</span> 하단 유틸</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul><li>Excel 다운로드 좌측 · 페이징 중앙</li></ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="bottom-3">
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>B.9</td></tr>
+          <tr><th>화면명</th><td>역량인증이력관리</td></tr>
+          <tr><th>메뉴 경로</th><td>역량개발 &gt; 역량 인증제 관리 &gt; 역량인증이력관리</td></tr>
+          <tr><th>유형</th><td>조회 · 목록형</td></tr>
+          <tr><th>사용자</th><td>총괄관리자</td></tr>
+          <tr><th>목적</th><td>학생이 비교과 프로그램 이수로 인증(또는 취소)받은 역량점수를 이수 건별로 조회</td></tr>
+          <tr><th>연계</th><td>B.6 역량 인증제 관리(검색조건·집계 데이터 소스 공유, 취소분은 총점수 재계산에 반영) · B.8 사용자 관리(총괄관리자 전용)</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>이수 건별 이력 조회</b>학생별 집계(B.6)가 아닌 이수 건 1개당 1행으로 표시 — 한 학생이 여러 행에 걸쳐 나타날 수 있음</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>B.6 검색조건 재사용 + 이력 전용 조건 추가</b>학교급·학년·이름/아이디·다면적역량은 그대로 재사용, 프로그램명·이수기간 검색을 신규 추가</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>선택 학생 액션 표준 재사용</b>알림발송·그룹관리·그룹설정 고정, 중복 제거 키는 아이디(이메일)</div></div>
+        <div class="stepline"><span class="tag ph-4">S4</span><div class="tx"><b>목록 컬럼 재구성</b>이름을 최우선 컬럼으로, 구분·처리일을 최후미 컬럼으로 배치하고 학교 컬럼을 추가</div></div>
+        <div class="stepline"><span class="tag ph-1">S5</span><div class="tx"><b>인증·취소 이력 동시 표시</b>취소 시 원본 인증 행은 유지하고 취소 행을 별도로 추가 — 구분 태그(인증/취소)로 구분, 취소 행은 회색 처리·취소선(신규 반영)</div></div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">본 화면은 총괄관리자 전용이다 — 부서운영자는 접근 권한이 없으며, 등급권한은 B.8 사용자 관리에서 부여한다(로그인 권한 기준 서버단 차단).</div>
+        <div class="std-box">학생 목록이 있는 관리자 화면 표준 — 알림발송(이메일 채널)·그룹관리·그룹설정을 고정 노출한다. 중복 제거 키는 아이디(이메일). [새로고침]은 폼 reset이 아니라 검색조건 초기화(쿼리스트링 제거).</div>
+        <div class="std-box">인증 이력은 취소되어도 삭제하지 않는다 — 원본 인증 행을 유지한 채 취소 행을 별도로 추가해 인증·취소 이력을 모두 남긴다(감사 추적 목적). 취소분 점수는 B.6 학생별 총점수·배지 등급 재계산 시 제외한다.</div>
+        <div class="exc-box"><b>SMS 채널 미반영</b> — 핸드폰 번호 미수집(회의록 2026-07-30). 알림발송은 시스템 알림·이메일 채널만 — 별도 [메일 발송] 버튼 미생성.</div>
+        <div class="exc-box"><b>[늘리기]·[일괄삭제] 생성 금지</b> — 팀 표준 제외.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    var doc = document.querySelector(".doc");
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM), total = doc.scrollHeight;
+    var n = Math.max(1, Math.ceil(total / pageH));
+    if(n < 2) return;
+    var layer = document.createElement("div");
+    layer.className = "page-break-guide"; layer.style.height = total + "px";
+    for(var i = 1; i < n; i++){
+        var l = document.createElement("div");
+        l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+        layer.appendChild(l);
+    }
+    doc.appendChild(layer);
+})();
+</script>
+</body>
+</html>

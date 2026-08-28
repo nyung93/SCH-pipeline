@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B.12 관리자 대시보드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Pretendard','Noto Sans KR','Malgun Gothic',sans-serif; font-size:12px; line-height:1.55;
+      word-break:keep-all; background:#e9edf0; color:#1a1a1a; padding:12px; }
+
+.doc{ width:297mm; margin:0 auto; background:#fff; position:relative;
+      box-shadow:0 0 0 1px #d5d9dd; padding:16px 18px; }
+@page { size:A4 landscape; margin:8mm; }
+@media print { body{background:#fff;padding:0;} .doc{box-shadow:none;} .page-break-guide{display:none;} }
+.page-break-guide{position:absolute;left:0;top:0;width:100%;pointer-events:none;z-index:999;}
+.page-break-guide .pbg-line{position:absolute;left:-1px;right:-1px;border-top:1px dashed #b8bcc2;}
+
+.page-header{ background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:10px 14px; display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.page-crumb{ display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.page-num{ background:#e8f0fe; color:#1a73e8; font-size:11px; font-weight:700;
+  padding:4px 11px; border-radius:5px; white-space:nowrap; }
+.page-num.strong{ background:#1a73e8; color:#fff; font-size:12.5px; font-weight:800;
+  padding:5px 13px; letter-spacing:-0.2px; }
+.page-title{ font-size:17px; font-weight:700; line-height:1.4; }
+.page-desc{ font-size:11.5px; color:#666; margin-top:2px; line-height:1.45; }
+
+.top-util{ display:flex; align-items:center; gap:10px; margin-left:auto; flex-shrink:0; }
+
+/* 전역 헤더 알림 아이콘 (2026-09-01 신규) */
+.hdr-bell{ position:relative; font-size:18px; cursor:pointer; line-height:1; }
+.hdr-bell .badge{ position:absolute; top:-6px; right:-9px; background:#e50048; color:#fff;
+  font-size:9px; font-weight:700; padding:1px 5px; border-radius:8px; line-height:1.35; min-width:14px; text-align:center; }
+
+.layout{ display:flex; gap:14px; align-items:flex-start; }
+.col-screen{ flex:1 1 0; min-width:0; }
+.col-req{ width:330px; flex-shrink:0; }
+.bottom-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:14px; align-items:start; }
+.bottom-3 .frame{ margin-bottom:0; }
+
+.grp{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:14px; }
+.grp:last-child{ margin-bottom:0; }
+.grp-cap{ background:#f0f0f0; border-bottom:1px solid #e0e0e0; padding:8px 13px;
+  display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#333; }
+.grp-cap .num{ background:#555; color:#fff; width:20px; height:20px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.grp-cap .tail{ margin-left:auto; font-size:11px; font-weight:500; color:#888; }
+.grp-body{ padding:11px 13px; background:#fff; }
+
+.frame{ border:1px solid #e0e0e0; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+.frame:last-child{ margin-bottom:0; }
+.frame-label{ background:#f0f0f0; padding:8px 12px; font-size:12px; font-weight:700; color:#333;
+  border-bottom:1px solid #e0e0e0; display:flex; align-items:center; gap:8px; }
+.frame-label .num{ background:#555; color:#fff; width:19px; height:19px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; flex-shrink:0; }
+.frame-label.def{ background:#1a73e8; color:#fff; border-bottom-color:#1a73e8; }
+.frame-label.def .num{ background:#fff; color:#1a73e8; }
+.frame-label.proc{ background:#e8f0fe; color:#1a73e8; border-bottom-color:#90caf9; }
+.frame-label.proc .num{ background:#1a73e8; }
+.frame-body{ padding:10px 12px; background:#fff; }
+
+.rq{ margin-bottom:11px; }
+.rq:last-child{ margin-bottom:0; }
+.rq-t{ font-size:10.5px; font-weight:700; color:#1a73e8; margin-bottom:4px; display:flex; align-items:center; gap:5px; }
+.rq-t::before{ content:''; width:4px; height:4px; border-radius:50%; background:#1a73e8; }
+.rq ul{ list-style:none; font-size:11px; line-height:1.5; }
+.rq li{ padding-left:10px; position:relative; margin-bottom:1px; }
+.rq li::before{ content:'·'; position:absolute; left:2px; color:#aaa; font-weight:700; }
+.rq li.em{ color:#c62828; font-weight:600; }
+.rq li.em::before{ color:#c62828; }
+
+.rqt{ width:100%; border-collapse:collapse; font-size:10.5px; }
+.rqt th{ background:#f8f8f8; padding:4px 6px; text-align:left; font-weight:600;
+  color:#555; border-bottom:1px solid #e0e0e0; line-height:1.4; white-space:nowrap; }
+.rqt td{ padding:4px 6px; border-bottom:1px solid #f0f0f0; line-height:1.4; }
+.rqt tr:last-child td{ border-bottom:none; }
+.rqt.spec th:first-child{ width:66px; }
+
+.btn{ padding:4px 11px; border-radius:4px; font-size:11px; font-weight:600; cursor:pointer;
+  height:26px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; border:none; line-height:1.4; }
+.btn-primary{ background:#1a73e8; color:#fff; }
+.btn-outline{ background:#fff; border:1px solid #ccc; color:#666; }
+.btn-mini{ height:22px; padding:2px 8px; font-size:10px; }
+
+/* 관리자 기본정보 카드 */
+.profile-card{ display:flex; align-items:center; gap:14px; border-radius:8px; padding:13px 16px; color:#fff;
+  background:linear-gradient(90deg,#5b80bd,#3899ca); }
+.profile-card .av{ width:42px; height:42px; border-radius:50%; background:rgba(255,255,255,.25);
+  display:flex; align-items:center; justify-content:center; font-size:19px; flex-shrink:0; }
+.profile-card .who{ flex:1; }
+.profile-card .who .nm{ font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; }
+.profile-card .who .grade{ font-size:9.5px; font-weight:700; background:rgba(255,255,255,.28); padding:2px 8px; border-radius:8px; }
+.profile-card .who .sc{ font-size:10.5px; opacity:.92; margin-top:3px; }
+
+/* 프로그램 현황 요약 KPI */
+.stat-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+.stat-box{ background:#f8f8f8; border-radius:6px; padding:11px 8px; text-align:center; }
+.stat-box .l{ font-size:10px; color:#888; }
+.stat-box .v{ font-size:19px; font-weight:700; margin-top:4px; color:#1a73e8; line-height:1.2; }
+.stat-box .v.gr{ color:#2e7d32; } .stat-box .v.ora{ color:#e65100; } .stat-box .v.na{ color:#5b80bd; }
+
+/* 최근 알림 미리보기 (A.6 hist-list 재사용) */
+.list-head{ display:flex; align-items:center; margin-bottom:9px; }
+.list-head .cnt{ font-size:12px; font-weight:700; color:#333; }
+.list-head .cnt b{ color:#1a73e8; }
+.list-head .act{ margin-left:auto; }
+.hist-list{ border-top:2px solid #1a73e8; }
+.hist-row{ display:flex; align-items:center; gap:12px; padding:9px 4px; border-bottom:1px solid #eee; }
+.hist-row:last-child{ border-bottom:none; }
+.hist-row.unread{ background:#f8fbff; }
+.hist-thumb{ width:36px; height:36px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:15px; color:#fff; }
+.hist-info{ flex:1; min-width:0; }
+.hist-title{ font-size:11px; line-height:1.5; color:#1a1a1a; }
+.hist-row.unread .hist-title{ font-weight:700; }
+.hist-meta{ font-size:10px; color:#888; margin-top:3px; }
+.hist-mng{ flex-shrink:0; }
+.rd{ font-size:10px; font-weight:700; padding:1px 7px; border-radius:8px; }
+.rd-un{ background:#e8f0fe; color:#1a73e8; }
+.rd-on{ background:#f2f2f2; color:#aaa; }
+
+/* 빠른 메뉴 */
+.banner-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+.banner{ border:1px solid #e0e0e0; border-top:3px solid #1a73e8; border-radius:5px; padding:13px 6px;
+  text-align:center; background:#fff; }
+.banner .ic{ font-size:19px; display:block; margin-bottom:6px; }
+.banner .lb{ font-size:11px; font-weight:700; color:#333; }
+.banner.b-teal{ border-top-color:#269e77; }
+.banner.b-navy{ border-top-color:#5b80bd; }
+.banner.b-red{ border-top-color:#c62828; }
+
+.stepline{ display:flex; gap:7px; padding:6px 0; border-bottom:1px dashed #e8e8e8; }
+.stepline:last-child{ border-bottom:none; }
+.stepline .tag{ flex-shrink:0; font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:3px; height:fit-content; white-space:nowrap; }
+.ph-1{ background:#e8f0fe; color:#1a73e8; } .ph-2{ background:#fff3e0; color:#e65100; }
+.ph-3{ background:#f3e5f5; color:#6a1b9a; } .ph-4{ background:#e8f5e9; color:#2e7d32; } .ph-5{ background:#fce4ec; color:#c2185b; }
+.stepline .tx{ font-size:10.5px; line-height:1.45; } .stepline .tx b{ display:block; font-size:11px; margin-bottom:1px; }
+
+.exc-box{ font-size:10.5px; color:#c62828; padding:6px 9px; background:#fce4ec; border-radius:5px; margin-top:5px; line-height:1.5; }
+.exc-box:first-child{ margin-top:0; }
+.std-box{ font-size:10.5px; color:#1a73e8; padding:6px 9px; background:#e8f0fe; border-radius:5px; margin-top:5px; line-height:1.5; }
+.std-box:first-child{ margin-top:0; }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <div class="page-header">
+    <div class="page-crumb"><span class="page-num strong">화면 B.12</span></div>
+    <div>
+      <div class="page-title">관리자 대시보드</div>
+      <div class="page-desc">관리자(총괄관리자·부서운영자) 로그인 후 첫 진입 화면(신설, 2026-09-01). 학생 A.2 마이페이지에 대응하는 관리자용 요약 랜딩 화면 — 관리자 기본정보·프로그램 현황·최근 알림·빠른 메뉴를 카드 중심으로 요약한다.</div>
+    </div>
+    <div class="top-util">
+      <div class="hdr-bell" title="알림함(B.11) — 클릭 시 이동">🔔<span class="badge">4</span></div>
+      <button class="btn btn-outline btn-mini">⚙ 관리</button>
+      <button class="btn btn-outline btn-mini">📘 가이드</button>
+      <button class="btn btn-outline btn-mini">🛠 유지보수</button>
+      <span class="page-num" style="margin-left:6px;">PAGE 1</span>
+    </div>
+  </div>
+
+  <div class="layout">
+
+    <div class="col-screen">
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">1</span> 관리자 기본정보</div>
+        <div class="grp-body">
+          <div class="profile-card">
+            <div class="av">🧑‍💼</div>
+            <div class="who">
+              <div class="nm">김민영 <span class="grade">총괄관리자</span></div>
+              <div class="sc">소속 운영부서 : － (총괄관리자는 전체 프로그램 권한)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">2</span> 프로그램 현황 요약 <span class="tail">이번달 기준 · B.5 데이터 재사용</span></div>
+        <div class="grp-body">
+          <div class="stat-row">
+            <div class="stat-box"><div class="l">이번달 신규 신청</div><div class="v">12건</div></div>
+            <div class="stat-box"><div class="l">모집중 프로그램</div><div class="v gr">8건</div></div>
+            <div class="stat-box"><div class="l">이번달 운영완료</div><div class="v ora">5건</div></div>
+            <div class="stat-box"><div class="l">총 참여 학생수</div><div class="v na">342명</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">3</span> 최근 알림 미리보기</div>
+        <div class="grp-body">
+          <div class="list-head">
+            <div class="cnt">미확인 <b>4</b>건</div>
+            <div class="act"><button class="btn btn-outline btn-mini">전체보기 →</button></div>
+          </div>
+          <div class="hist-list">
+            <div class="hist-row unread">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#2e7d32,#66bb6a);">✓</div>
+              <div class="hist-info">
+                <div class="hist-title">창의취업지원팀에서 AI 인공지능 기초 코딩 워크숍의 운영을 완료했습니다.</div>
+                <div class="hist-meta">2026-08-31 09:12</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-un">안읽음</span></div>
+            </div>
+            <div class="hist-row unread">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#c62828,#e57373);">!</div>
+              <div class="hist-info">
+                <div class="hist-title">나의 진로 설계: 꿈을 찾는 시간의 수료 처리가 필요합니다.</div>
+                <div class="hist-meta">2026-08-31 08:40</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-un">안읽음</span></div>
+            </div>
+            <div class="hist-row unread">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#e65100,#ff9e57);">📅</div>
+              <div class="hist-info">
+                <div class="hist-title">학생지원팀에서 인성교육 워크숍의 운영 일자를 변경했습니다.</div>
+                <div class="hist-meta">2026-08-30 17:05</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-un">안읽음</span></div>
+            </div>
+            <div class="hist-row">
+              <div class="hist-thumb" style="background:linear-gradient(135deg,#6a1b9a,#ab47bc);">🆔</div>
+              <div class="hist-info">
+                <div class="hist-title">산학협력팀에서 임시 아이디를 발급했습니다.</div>
+                <div class="hist-meta">2026-08-29 11:00</div>
+              </div>
+              <div class="hist-mng"><span class="rd rd-on">읽음</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grp">
+        <div class="grp-cap"><span class="num">4</span> 빠른 메뉴</div>
+        <div class="grp-body">
+          <div class="banner-grid">
+            <div class="banner b-navy"><span class="ic">📋</span><span class="lb">프로그램 리스트</span></div>
+            <div class="banner"><span class="ic">👥</span><span class="lb">지원자 관리</span></div>
+            <div class="banner b-teal"><span class="ic">📊</span><span class="lb">비교과 프로그램 통계</span></div>
+            <div class="banner b-red"><span class="ic">🔑</span><span class="lb">사용자 관리</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="col-req">
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">1</span> 관리자 기본정보</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>이름·등급권한(총괄관리자/부서운영자) 배지 표시</li>
+              <li class="em">부서운영자 로그인 시에만 소속 운영부서명 표시 — 총괄관리자는 전체 프로그램 권한이므로 "－"</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">2</span> 프로그램 현황 요약</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>이번달 신규 신청·모집중 프로그램·이번달 운영완료·총 참여 학생수 4종 KPI 카드</li>
+              <li class="em">B.5 비교과 프로그램 통계와 동일한 집계 로직을 축약 재사용 — 별도 집계 로직 신설 없음</li>
+              <li>부서운영자 로그인 시 본인 소속 운영부서 프로그램 기준으로만 집계(B.8 연계)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">3</span> 최근 알림 미리보기</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>B.11 알림함 데이터 중 최근 4건만 미리보기, [전체보기] 클릭 시 B.11 알림함 전체 목록으로 이동</li>
+              <li class="em">본 카드는 미리보기 전용 — 개별 [확인] 읽음 처리 버튼은 두지 않으며, 읽음 처리는 B.11에서만 수행</li>
+              <li>노출 알림 유형은 로그인 권한(총괄관리자/부서운영자)에 따라 B.11과 동일하게 서버단 필터</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame">
+        <div class="frame-label"><span class="num">4</span> 빠른 메뉴</div>
+        <div class="frame-body">
+          <div class="rq">
+            <div class="rq-t">동작 규칙</div>
+            <ul>
+              <li>프로그램 리스트(B.2)·지원자 관리(B.4)·비교과 프로그램 통계(B.5)·사용자 관리(B.8) 4종 바로가기</li>
+              <li class="em">사용자 관리(B.8)는 총괄관리자 전용 — 부서운영자 로그인 시 비활성화 또는 미노출</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bottom-3">
+
+    <div class="frame">
+      <div class="frame-label def"><span class="num">D</span> 화면 정의서</div>
+      <div class="frame-body">
+        <table class="rqt spec">
+          <tr><th>화면 ID</th><td>B.12</td></tr>
+          <tr><th>화면명</th><td>관리자 대시보드</td></tr>
+          <tr><th>메뉴 경로</th><td>관리자 로그인 후 첫 진입 화면 (특정 대메뉴 하위 아님)</td></tr>
+          <tr><th>유형</th><td>조회 · 대시보드형</td></tr>
+          <tr><th>사용자</th><td>총괄관리자 · 부서운영자</td></tr>
+          <tr><th>목적</th><td>관리자 개인 권한·프로그램 현황·최근 알림을 요약해 보여주는 랜딩 대시보드</td></tr>
+          <tr><th>연계</th><td>B.2 프로그램 리스트 · B.4 지원자 관리 · B.5 비교과 프로그램 통계 · B.8 사용자 관리 · B.11 알림함(헤더 알림 아이콘 + 최근 알림 미리보기)</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label proc"><span class="num">P</span> 특화 기능 요약</div>
+      <div class="frame-body">
+        <div class="stepline"><span class="tag ph-1">S1</span><div class="tx"><b>관리자 기본정보 카드</b>이름·등급권한 배지, 부서운영자는 소속 운영부서 병기</div></div>
+        <div class="stepline"><span class="tag ph-2">S2</span><div class="tx"><b>프로그램 현황 요약</b>B.5 집계를 재사용한 KPI 카드 4종</div></div>
+        <div class="stepline"><span class="tag ph-3">S3</span><div class="tx"><b>최근 알림 미리보기</b>B.11 알림함 최근 4건 미리보기 + [전체보기]</div></div>
+        <div class="stepline"><span class="tag ph-4">S4</span><div class="tx"><b>빠른 메뉴</b>자주 쓰는 관리 화면 4종 원클릭 이동</div></div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label"><span class="num">!</span> 표준 규칙 · 예외</div>
+      <div class="frame-body">
+        <div class="std-box">관리자 로그인 계정 기준 개인화 랜딩 대시보드로 구성하며, 카드·요약 중심 UI로 관리자용 그리드/공통 학적필터는 사용하지 않음(A.2 마이페이지와 동일한 설계 원칙).</div>
+        <div class="std-box">(2026-09-01 확정) 헤더 우측 🔔 알림 아이콘은 B.11 알림함으로 연결되는 전역 알림 기능이다 — 아이콘 클릭 시 드롭다운 없이 바로 B.11로 이동, 미확인 건수를 배지로 표시한다.</div>
+        <div class="std-box">부서운영자 로그인 시 프로그램 현황 요약·최근 알림·빠른 메뉴는 모두 본인 소속 운영부서 기준으로 서버단 필터링된다(B.8 사용자 관리 연계).</div>
+        <div class="exc-box"><b>[늘리기]·[일괄삭제] 생성 금지</b> — 팀 표준 제외.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+    var PAGE_H_MM = 210, PRINT_MARGIN_MM = 16;
+    function mmToPx(mm){
+        var p = document.createElement("div");
+        p.style.cssText = "position:absolute;visibility:hidden;height:"+mm+"mm;width:0;";
+        document.body.appendChild(p);
+        var px = p.getBoundingClientRect().height;
+        document.body.removeChild(p); return px;
+    }
+    var pageH = mmToPx(PAGE_H_MM - PRINT_MARGIN_MM);
+    document.querySelectorAll(".doc").forEach(function(doc){
+        var total = doc.scrollHeight;
+        var n = Math.max(1, Math.ceil(total / pageH));
+        if(n < 2) return;
+        var layer = document.createElement("div");
+        layer.className = "page-break-guide"; layer.style.height = total + "px";
+        for(var i = 1; i < n; i++){
+            var l = document.createElement("div");
+            l.className = "pbg-line"; l.style.top = (pageH * i) + "px";
+            layer.appendChild(l);
+        }
+        doc.appendChild(layer);
+    });
+})();
+</script>
+
+</body>
+</html>
